@@ -1,0 +1,269 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Zap, CheckCircle2, Circle, Clock, Sun, Sunset, Moon,
+  ChevronRight, Trophy, AlertTriangle, Play
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface DailyMission {
+  id: string;
+  period: 'manha' | 'tarde' | 'noite';
+  title: string;
+  description: string;
+  activity_type: 'aula' | 'questoes' | 'revisao' | 'flashcard' | 'estudo';
+  duration_minutes: number;
+  completed: boolean;
+  order_index: number;
+  color: string;
+}
+
+interface MissaoDoDiaProps {
+  onStartFlow: (queue: any[], period: 'manha' | 'tarde' | 'noite') => void;
+}
+
+const PRECEPTOR_FRASES = [
+  "Analise. Decida. Lidere.",
+  "A base técnica é construída na repetição deliberada.",
+  "O conhecimento não é passivo. Inicie a missão.",
+  "Seu progresso é monitorado. Mantenha o padrão de elite.",
+  "O tempo é o recurso mais escasso. Use-o com precisão.",
+  "Elite não adia o inevitável. Comece agora.",
+];
+
+const PERIOD_CONFIG = {
+  manha: { label: 'Manhã', icon: Sun, cor: '#f59e0b', bg: 'from-amber-500/20 to-transparent' },
+  tarde: { label: 'Tarde', icon: Sunset, cor: '#f97316', bg: 'from-orange-500/20 to-transparent' },
+  noite: { label: 'Noite', icon: Moon, cor: '#6366f1', bg: 'from-indigo-500/20 to-transparent' },
+};
+
+const ACTIVITY_EMOJI: Record<string, string> = {
+  aula: '📚',
+  questoes: '📝',
+  revisao: '🔄',
+  flashcard: '🃏',
+  estudo: '🎯',
+};
+
+export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
+  const [missions, setMissions] = useState<DailyMission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeMission, setActiveMission] = useState<string | null>(null);
+  const [preceptorFrase] = useState(() => PRECEPTOR_FRASES[Math.floor(Math.random() * PRECEPTOR_FRASES.length)]);
+
+  const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => { loadMissions(); }, []);
+
+  async function loadMissions() {
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('daily_missions')
+        .select('*')
+        .eq('date', today)
+        .order('order_index');
+      setMissions(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  }
+
+  async function toggleMission(id: string, current: boolean) {
+    await supabase.from('daily_missions').update({ completed: !current }).eq('id', id);
+    setMissions(prev => prev.map(m => m.id === id ? { ...m, completed: !current } : m));
+  }
+
+  async function gerarMissoes() {
+    const padrao = [
+      { period: 'manha', title: 'Ver plano do dia', activity_type: 'revisao', duration_minutes: 10, order_index: 1, color: '#6366f1' },
+      { period: 'manha', title: 'Aula do cursinho', activity_type: 'aula', duration_minutes: 60, order_index: 2, color: '#3b82f6' },
+      { period: 'tarde', title: '10 Questões', activity_type: 'questoes', duration_minutes: 30, order_index: 3, color: '#10b981' },
+      { period: 'noite', title: 'Revisão de Flashcards', activity_type: 'flashcard', duration_minutes: 20, order_index: 4, color: '#f59e0b' },
+    ];
+    await supabase.from('daily_missions').insert(padrao.map(m => ({ ...m, date: today })));
+    await loadMissions();
+  }
+
+  const concluidas = missions.filter(m => m.completed).length;
+  const total = missions.length;
+  const progresso = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+
+  const periodos = ['manha', 'tarde', 'noite'] as const;
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  async function handleStartFlow(period: 'manha' | 'tarde' | 'noite') {
+    const missionsInPeriod = missions.filter(m => m.period === period && !m.completed);
+    if (missionsInPeriod.length === 0) return;
+
+    const queue = missionsInPeriod.map(m => ({
+      id: m.id,
+      type: m.activity_type,
+      title: m.title,
+      subject: m.description || 'Geral',
+      duration_minutes: m.duration_minutes,
+      priority: m.order_index
+    }));
+
+    onStartFlow(queue, period);
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
+      {/* Header com Preceptor */}
+      <div className="relative overflow-hidden rounded-3xl border border-red-500/30 bg-red-500/5 p-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-transparent to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-6 h-6 text-red-400" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em]">🎖️ Preceptor</p>
+            <p className="text-xl font-black text-white mt-0.5">"{preceptorFrase}"</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progresso do dia */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tighter">🔥 MISSÃO DO DIA</h2>
+            <p className="text-text-secondary text-sm mt-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-4xl font-black text-primary">{progresso}%</span>
+            <p className="text-text-secondary text-xs">{concluidas}/{total} concluídas</p>
+          </div>
+        </div>
+        <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden mb-6">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+            initial={{ width: 0 }}
+            animate={{ width: `${progresso}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+        
+        {total > 0 && concluidas < total && (
+          <button 
+            onClick={() => handleStartFlow(periodos.find(p => missions.some(m => m.period === p && !m.completed)) || 'manha')}
+            className="w-full py-4 bg-primary text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all"
+          >
+            <Zap className="w-5 h-5 fill-current" /> COMEÇAR AGORA (FLOW ENGINE)
+          </button>
+        )}
+
+        {progresso === 100 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 flex items-center gap-2 text-emerald-400 font-bold justify-center bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20">
+            <Trophy className="w-5 h-5" /> Dia completo! Missão cumprida. 🏆
+          </motion.div>
+        )}
+      </div>
+
+      {/* Se não tem missões */}
+      {total === 0 && (
+        <div className="flex flex-col items-center gap-4 py-12 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center">
+            <Zap className="w-8 h-8 text-text-secondary" />
+          </div>
+          <div>
+            <p className="text-xl font-bold text-white">Nenhuma missão para hoje</p>
+            <p className="text-text-secondary mt-1">Gere as missões do dia para começar</p>
+          </div>
+          <button onClick={gerarMissoes} className="btn-primary flex items-center gap-2">
+            <Zap className="w-4 h-4" /> Gerar Missões do Dia
+          </button>
+        </div>
+      )}
+
+      {/* Missões por período */}
+      <div className="flex flex-col gap-6 mb-12">
+        {periodos.map(periodo => {
+          const msDoPeriodo = missions.filter(m => m.period === periodo);
+          if (msDoPeriodo.length === 0) return null;
+          const config = PERIOD_CONFIG[periodo];
+          const Icon = config.icon;
+
+          return (
+            <div key={periodo} className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: config.cor + '20' }}>
+                    <Icon className="w-4 h-4" style={{ color: config.cor }} />
+                  </div>
+                  <h3 className="text-sm font-black uppercase tracking-[0.15em]" style={{ color: config.cor }}>{config.label}</h3>
+                </div>
+                {!msDoPeriodo.every(m => m.completed) && (
+                  <button 
+                    onClick={() => handleStartFlow(periodo)}
+                    className="text-[10px] font-black text-primary px-3 py-1 bg-primary/10 rounded-lg hover:bg-primary/20"
+                  >
+                    INICIAR TURNO
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <AnimatePresence>
+                  {msDoPeriodo.sort((a, b) => a.order_index - b.order_index).map((mission, idx) => (
+                    <motion.div
+                      key={mission.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                        mission.completed
+                          ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
+                          : activeMission === mission.id
+                          ? 'border-primary/50 bg-primary/10'
+                          : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
+                      }`}
+                    >
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleMission(mission.id, mission.completed); }}
+                        className="flex-shrink-0 transition-transform hover:scale-110"
+                      >
+                        {mission.completed
+                          ? <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                          : <Circle className="w-6 h-6 text-text-secondary" />
+                        }
+                      </button>
+
+                      <div className="w-2 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: mission.color }} />
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span>{ACTIVITY_EMOJI[mission.activity_type] || '📌'}</span>
+                          <span className={`font-bold text-sm ${mission.completed ? 'line-through text-text-secondary' : 'text-white'}`}>
+                            {mission.title}
+                          </span>
+                        </div>
+                        {mission.description && (
+                          <p className="text-text-secondary text-xs mt-0.5 truncate">{mission.description}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 text-text-secondary text-xs">
+                          <Clock className="w-3 h-3" />
+                          <span>{mission.duration_minutes}min</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}

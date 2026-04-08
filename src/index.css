@@ -1,0 +1,283 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta Oficial: Cirurgia Orbital */
+  --color-background: #0F111A;
+  --color-card: #1E2330;
+  
+  --color-primary: #0EA5E9;
+  --color-success: #10B981;
+  --color-alert: #F43F5E;
+  
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text-primary;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Utilitários Premium */
+.glass-card {
+  @apply bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl;
+}
+
+.glass-card-hover {
+  @apply hover:bg-card/60 transition-all duration-300 border-white/10;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-400 font-bold;
+}
+
+.btn-primary {
+  @apply bg-primary hover:brightness-110 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-primary/20 active:scale-95 flex items-center justify-center gap-2;
+}
+
+.btn-secondary {
+  @apply bg-white/5 hover:bg-white/10 text-text-primary px-6 py-3 rounded-xl font-semibold transition-all border border-white/10 active:scale-95 flex items-center justify-center gap-2;
+}
+
+.badge-alert {
+  @apply bg-alert/10 text-alert text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-alert/20;
+}
+
+.badge-success {
+  @apply bg-success/10 text-success text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-success/20;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
+}
+
+/* Sistema de Design Ferretto (Premium Academic) */
+.ferretto-sidebar {
+  @apply bg-[#0047AB] text-white p-6 rounded-2xl flex flex-col gap-3 shadow-xl;
+  @apply border-l-8 border-yellow-400;
+}
+
+.ferretto-box {
+  @apply bg-slate-100 border-2 rounded-xl p-6 my-4 shadow-sm break-inside-avoid;
+}
+
+.ferretto-box-theory {
+  @apply border-emerald-200 bg-emerald-50/50;
+}
+
+.ferretto-box-insight {
+  @apply border-blue-200 bg-blue-50/50;
+}
+
+.ferretto-title-box {
+  @apply bg-[#0047AB] text-white px-4 py-2 rounded-t-xl -mt-6 -mx-6 mb-4 font-black uppercase text-xs tracking-widest;
+}
+
+/* Tipografia Refinada p/ PDF */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  /* Reset Total: Nada de fundo escuro no papel */
+  * {
+    background: white !important;
+    background-color: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    visibility: hidden;
+  }
+
+  html, body {
+    background: white !important;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  .printable-content, .printable-content * {
+    background: white !important;
+    background-color: white !important;
+    visibility: visible !important;
+    color: black !important;
+  }
+
+  .printable-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    display: block !important; /* Mudar p/ bloco único (mais organizado) */
+  }
+  
+  .print-main-column {
+    width: 100% !important;
+    display: block !important;
+  }
+  
+  .print-sidebar {
+    display: none !important; /* Sidebar costuma poluir material longo */
+  }
+
+  .academic-text p, .academic-text li, .academic-text div, .academic-text span {
+    font-family: 'Georgia', 'Times New Roman', serif !important; /* Visual de livro real */
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    text-align: left !important; /* Evitar 'espaços vazios' gigantes */
+    margin-bottom: 0.35cm !important;
+    color: #111 !important;
+  }
+
+  .academic-h1 {
+    font-size: 22pt !important;
+    margin-bottom: 1cm !important;
+    font-weight: 900 !important;
+    border-bottom: 4px solid #0047AB !important;
+    width: 100%;
+    color: black !important;
+  }
+
+  .academic-h2 {
+    font-size: 13pt !important;
+    font-weight: 800 !important;
+    color: #0047AB !important;
+    margin-top: 0.6cm !important;
+    border-bottom: 1px solid #eee;
+  }
+
+  .academic-keyword {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #999 !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* === DESIGN PROFISSIONAL v17 (Apostila Imperial) === */
+.container-resumo {
+  font-family: 'Georgia', serif !important;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  padding: 60px !important;
+  max-width: 850px !important;
+  margin: auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  max-height: 750px !important;
+  overflow-y: auto !important;
+  line-height: 1.6 !important;
+  font-size: 15px !important;
+}
+
+/* BLOCO DE ASSUNTO (v17 - Imperial) */
+.bloco {
+  border-top: 2px solid #0047AB !important;
+  padding: 25px 0 !important;
+  margin-top: 40px !important;
+  margin-bottom: 20px !important;
+  page-break-inside: avoid !important;
+}
+
+.bloco h2 {
+  margin-top: 0 !important;
+  color: #0047AB !important;
+  font-weight: 900 !important;
+  font-size: 1.6rem !important;
+  font-family: 'Inter', sans-serif !important; /* Títulos sãos limpos */
+}
+
+/* DESTAQUE IMPORTANTE (⚠️) */
+.importante {
+  background: #f8fafc !important;
+  padding: 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  margin: 25px 0 !important;
+  font-weight: 700 !important;
+  color: #0047AB !important;
+  page-break-inside: avoid !important;
+  font-style: italic;
+}
+
+.container-resumo h1 {
+  font-size: 28px !important;
+  margin-bottom: 30px !important;
+  font-weight: 950 !important;
+  color: #000 !important;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.container-resumo h3 {
+  font-size: 16px !important;
+  margin-top: 20px !important;
+  font-weight: 800 !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #eee;
+}
+
+/* TEXTO E LISTAS IMPERIAIS */
+.container-resumo p {
+  margin-bottom: 15px !important;
+}
+
+.container-resumo li {
+  margin-bottom: 8px !important;
+  font-size: 15px !important;
+}
+
+.container-resumo strong {
+  font-weight: 900 !important;
+  color: #000 !important;
+  /* Removido o fundo cinza poluente */
+}
+
+/* FIX: Expansão total para o PDF e evitar cortes entre páginas (v18 - Corte Zero) */
+.full-height-export {
+  max-height: none !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  padding: 2.5cm !important;
+  width: 210mm !important;
+  position: relative !important;
+}
+
+/* Super Força: Desbloquear qualquer contêiner que esconda texto */
+.parent-export-fix, 
+.parent-export-fix * {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+.full-height-export p, 
+.full-height-export li, 
+.full-height-export .bloco, 
+.full-height-export .importante {
+  page-break-inside: avoid !important;
+  break-inside: avoid-page !important;
+}
+
+/* === FORM UTILITIES (Módulos 16-24) === */
+.label-form {
+  @apply text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block;
+}
+.input-form {
+  @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none transition-colors;
+}
