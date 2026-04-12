@@ -180,7 +180,8 @@ export default function App() {
         <div className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8">
 
           {/* Tab content — sem AnimatePresence para evitar crash insertBefore do Framer Motion */}
-          <div className="animate-in fade-in duration-200">
+          {/* Tab content — removido animate-in para evitar conflito de reconciliação do React 19 e crash insertBefore */}
+          <div className="opacity-100">
             {activeTab === 'dashboard' && (
               <div className="flex flex-col gap-8">
                 <header className="flex justify-between items-start">

@@ -320,7 +320,7 @@ export function Triturador() {
             {isProcessing && (
               <div className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5">
                 <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 text-indigo-400 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-5 h-5 text-indigo-400 flex-shrink-0" />
                   <div>
                     <p className="font-black text-white text-sm">
                       {stage === 'extracting' ? '📄 Extraindo texto do PDF...' :
@@ -352,7 +352,7 @@ export function Triturador() {
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
             >
               {isProcessing ? (
-                <><Loader2 className="w-6 h-6 animate-spin" /> Processando...</>
+                <><Loader2 className="w-6 h-6" /> Processando...</>
               ) : (
                 <><Zap className="w-6 h-6 fill-white" /> Triturar Agora</>
               )}
