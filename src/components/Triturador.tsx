@@ -222,7 +222,7 @@ export function Triturador() {
 
       {/* ÁREA DE INPUT */}
       {stage !== 'done' && (
-        <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+        <div className="flex flex-col gap-4">
 
             {mode === 'pdf' ? (
               /* DRAG & DROP */
@@ -310,7 +310,7 @@ export function Triturador() {
 
             {/* ERRO */}
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
                 <p className="text-sm font-bold text-red-300">{error}</p>
               </div>
@@ -318,7 +318,7 @@ export function Triturador() {
 
             {/* PROGRESSO */}
             {isProcessing && (
-              <div className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5 animate-in fade-in">
+              <div className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-indigo-400 animate-spin flex-shrink-0" />
                   <div>
@@ -363,7 +363,7 @@ export function Triturador() {
 
         {/* RESULTADO */}
         {stage === 'done' && result && (
-          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col gap-6">
 
             {/* BANNER DE SUCESSO */}
             <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center gap-4">
