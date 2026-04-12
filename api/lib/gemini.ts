@@ -1,15 +1,23 @@
 // ============================================================
-// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO FINAL ESTÁVEL)
-// Cliente serverless para Google Gemini com Fallback e Prompt Fusion
+// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO RESILIÊNCIA TOTAL)
+// Cliente serverless com busca exaustiva de modelos compatíveis
 // ============================================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-// Modelos estáveis para o canal v1beta (Necessário para Gemini 2.0 Flash em contas pagas)
+/**
+ * Lista expandida de modelos candidatos. 
+ * Inclui versões estáveis, experimentais e específicas por versão.
+ */
 const MODELS_FALLBACK = [
-  'gemini-2.0-flash',        // O modelo que apareceu no seu gráfico do AI Studio
-  'gemini-1.5-flash',        // Backup estável
-  'gemini-1.5-flash-latest'  // Backup de redundância
+  'gemini-2.0-flash',          // Preferencial (Visto no Dashboard)
+  'gemini-2.0-flash-001',      // Versão específica 2.0
+  'gemini-2.0-flash-exp',      // Versão experimental
+  'gemini-1.5-flash',          // Estável 1.5
+  'gemini-1.5-flash-002',      // Estável atualizada
+  'gemini-1.5-flash-latest',   // Alias estável
+  'gemini-1.5-pro',            // Modelo inteligente de backup
+  'gemini-1.5-pro-latest'      // Backup inteligente
 ];
 
 export interface GeminiResponse {
@@ -19,83 +27,84 @@ export interface GeminiResponse {
 }
 
 /**
- * Chama a API Gemini com fusão de prompt (System + User) para máxima compatibilidade.
+ * Chama a API Gemini tentando múltiplos modelos até obter sucesso.
  */
 export async function callGemini(
   prompt: string,
   systemInstruction: string = '',
   expectJSON: boolean = false,
-  maxRetries: number = 2
+  maxRetries: number = 1
 ): Promise<GeminiResponse> {
   let lastError: any = null;
 
-  // FUSÃO DE PROMPT: Injeta instruções no início para evitar erros de schema v1/v1beta
+  // Prompt Fusion para evitar erros de campo systemInstruction em certas APIs
   const combinedPrompt = systemInstruction 
-    ? `INSTRUÇÕES DE SISTEMA:\n${systemInstruction}\n\n---\n\nUSUÁRIO:\n${prompt}${expectJSON ? '\n\nIMPORTANTE: Responda APENAS com o JSON válido, sem explicações extras.' : ''}`
+    ? `PAPEL DO SISTEMA: ${systemInstruction}\n\n---\n\nSOLICITAÇÃO: ${prompt}${expectJSON ? '\n\nResponda estritamente em JSON.' : ''}`
     : prompt;
 
   for (const modelId of MODELS_FALLBACK) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const body: any = {
-          contents: [{ 
-            role: 'user',
-            parts: [{ text: combinedPrompt }] 
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-          },
-        };
+    console.log(`📡 [Triturador] Tentando modelo: ${modelId}`);
+    
+    try {
+      const body: any = {
+        contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+        },
+      };
 
-        // URL v1beta — O canal onde o Gemini 2.0 opera com todos os recursos
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
-        
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 50000);
+      // Tenta endpoint v1beta primeiro pela maior compatibilidade de modelos
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 55000); // 55s para não dar timeout no Vercel
 
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
 
-        clearTimeout(timeout);
+      clearTimeout(timeout);
 
-        if (response.status === 404 || response.status === 403) {
-          lastError = new Error(`Modelo ${modelId} não encontrado (404/403). Tentando backup...`);
-          break; 
-        }
-
-        if (!response.ok) {
-          const errBody = await response.text();
-          throw new Error(`Erro ${response.status}: ${errBody}`);
-        }
-
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-        if (!text) throw new Error('Resposta vazia da IA');
-
-        if (expectJSON) {
-          const parsed = safeParseJSON(text);
-          if (!parsed) throw new Error('Falha ao processar JSON da IA');
-          return { text, parsed, modelUsed: modelId };
-        }
-
-        return { text, modelUsed: modelId };
-
-      } catch (err: any) {
-        lastError = err;
-        if (attempt < maxRetries) {
-          await new Promise(r => setTimeout(r, 1000));
-        }
+      // Se o erro for 404, 403 ou 400 (Bad Format), tentamos o PRÓXIMO modelo
+      if (response.status === 404 || response.status === 403 || response.status === 400) {
+        const errText = await response.text();
+        console.warn(`⚠️ [Triturador] Modelo ${modelId} recusado (${response.status}): ${errText.substring(0, 100)}`);
+        lastError = new Error(`Modelo ${modelId} -> ${response.status}`);
+        continue; 
       }
+
+      if (!response.ok) {
+        throw new Error(`Erro API ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      if (!text) continue;
+
+      if (expectJSON) {
+        const parsed = safeParseJSON(text);
+        if (!parsed) {
+          console.warn(`🔍 [Triturador] ${modelId} retornou texto, mas JSON era inválido. Tentando próximo...`);
+          continue;
+        }
+        return { text, parsed, modelUsed: modelId };
+      }
+
+      console.log(`✅ [Triturador] Sucesso com: ${modelId}`);
+      return { text, modelUsed: modelId };
+
+    } catch (err: any) {
+      console.error(`❌ [Triturador] Falha crítica em ${modelId}:`, err.message);
+      lastError = err;
     }
   }
 
-  throw new Error(`O Triturador falhou em todos os caminhos. Motivo: ${lastError?.message}`);
+  throw new Error(`O Triturador IA esgotou todos os ${MODELS_FALLBACK.length} modelos disponíveis e nenhum respondeu. Verifique sua chave API e o status do faturamento no Google AI Studio. ÚLTIMO ERRO: ${lastError?.message}`);
 }
 
 function safeParseJSON(text: string): any | null {
@@ -107,7 +116,6 @@ function safeParseJSON(text: string): any | null {
   const firstBrace = text.indexOf('{');
   const firstBracket = text.indexOf('[');
   const start = firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket) ? firstBrace : firstBracket;
-  
   if (start !== -1) {
     const closer = text[start] === '[' ? ']' : '}';
     const end = text.lastIndexOf(closer);
