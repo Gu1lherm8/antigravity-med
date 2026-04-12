@@ -40,29 +40,32 @@ interface ProcessResult {
 // EXTRAÇÃO DE TEXTO DO PDF — usa PDF.js via workerSrc
 // =========================================================
 async function extractTextFromPDF(file: File): Promise<string> {
-  // Carrega pdf.js dinamicamente para não quebrar o bundle
-  const pdfjsLib = await import('pdfjs-dist');
-  
-  // Worker necessário para renderização
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
+  // Instancia fora do loop de renderização para não bloquear o React 19 em operações críticas
+  try {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
 
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item: any) => ('str' in item ? item.str : ''))
-      .join(' ');
-    fullText += pageText + '\n';
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => ('str' in item ? item.str : ''))
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText.trim();
+  } catch (error) {
+    console.error('Erro na extração de PDF:', error);
+    throw new Error('Falha ao processar o arquivo PDF localmente.');
   }
-
-  return fullText.trim();
 }
 
 // =========================================================
@@ -112,6 +115,10 @@ export function Triturador() {
         // Etapa 1: Extração
         setStage('extracting');
         setProgress(20);
+        
+        // Timeout pequeno para o React ter chance de renderizar o `stage` antes da operação de IO pesada
+        await new Promise(r => setTimeout(r, 50)); 
+
         text = await extractTextFromPDF(file);
 
         if (text.length < 50) {
@@ -308,40 +315,43 @@ export function Triturador() {
               ))}
             </div>
 
-            {/* ERRO */}
-            {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <p className="text-sm font-bold text-red-300">{error}</p>
-              </div>
-            )}
+            {/* BLOCO ESTÁVEL: CONTÊINER DE ESTADOS AUXILIARES (Erro e Progresso) */}
+            <div className="flex flex-col gap-4 min-h-0">
+              {/* ERRO */}
+              {error && (
+                <div key="triturador-error" className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <p className="text-sm font-bold text-red-300">{error}</p>
+                </div>
+              )}
 
-            {/* PROGRESSO */}
-            {isProcessing && (
-              <div className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <p className="font-black text-white text-sm">
-                      {stage === 'extracting' ? '📄 Extraindo texto do PDF...' :
-                       stage === 'processing' ? '🧠 Gemini está triturando o conteúdo...' :
-                       '💾 Salvando no Supabase...'}
-                    </p>
-                    <p className="text-[11px] text-text-secondary/60 mt-0.5">
-                      {stage === 'processing' ? 'Gerando resumo, flashcards e questões ENEM...' :
-                       stage === 'saving' ? 'Salvando em theory_notes, flashcards e questions...' : ''}
-                    </p>
+              {/* PROGRESSO */}
+              {isProcessing && (
+                <div key="triturador-progresso" className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-indigo-400 flex-shrink-0" />
+                    <div>
+                      <p className="font-black text-white text-sm">
+                        {stage === 'extracting' ? '📄 Extraindo texto do PDF (pode levar uns segundos)...' :
+                         stage === 'processing' ? '🧠 A IA está triturando o conteúdo acadêmico...' :
+                         '💾 Salvando material no Banco de Dados...'}
+                      </p>
+                      <p className="text-[11px] text-text-secondary/60 mt-0.5">
+                        {stage === 'processing' ? 'Isso envolve análise, resumo profundo e criação de dezenas de cartões...' :
+                         stage === 'saving' ? 'Inserindo em theory_notes, flashcards e questions...' : ''}
+                      </p>
+                    </div>
                   </div>
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs font-black text-indigo-400/60 text-right">{progress}% completo</p>
                 </div>
-                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all "
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="text-xs font-black text-indigo-400/60 text-right">{progress}%</p>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* BOTÃO */}
             <button

@@ -8,31 +8,37 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { callGemini } from './lib/gemini.js';
 import { supabaseServer } from './lib/supabase-server.js';
 
-const SYSTEM_PROMPT = `Você é o Triturador — o motor intelectual do Antigravity Med.
-Sua missão é processar conteúdo acadêmico e gerar material de estudo de altíssima qualidade.
+// Estende o tempo máximo da API Serverless no Vercel para 60 segundos (Evita Error 500 por Timeout)
+export const maxDuration = 60;
+
+const SYSTEM_PROMPT = `Você é o Triturador — o orquestrador intelectual definitivo do Antigravity Med.
+Sua missão é processar conteúdo acadêmico (PDFs e anotações brutas) e gerar material de hiper-absorção em JSON estruturado, aplicando ciência cognitiva.
 
 REGRAS ABSOLUTAS:
-1. Responda EXCLUSIVAMENTE em JSON válido, sem texto extra
-2. O resumo deve ser em Markdown formatado com ## para seções, ### para sub-seções, **negrito** para termos-chave
-3. Flashcards devem ter frente (pergunta) e verso (resposta concisa)
-4. Questões devem ser estilo ENEM com 5 alternativas
-5. Identifique a matéria e tópico do conteúdo automaticamente
-6. Mínimo: 5 flashcards e 3 questões por PDF`;
+1. Responda EXCLUSIVAMENTE com o objeto JSON válido.
+2. Seja cirúrgico: Resumos devem extrair apenas a "polpa" do conteúdo, dividida por ## seções.
+3. Use analogias no resumo para conceitos densos.
+4. Flashcards DEVEM incluir um mnemônico ou técnica de memória (ex: Associação) junto com a resposta.
+5. As questões geradas devem simular o nível de dificuldade de bancas reais (Morte Súbita).`;
 
 const JSON_FORMAT = `{
-  "subject": "nome da matéria (Biologia, Química, etc)",
-  "topic": "tópico específico",
-  "title": "título do resumo",
-  "summary": "resumo completo em markdown formatado",
+  "subject": "Nome da matéria (Ex: Biologia)",
+  "topic": "Tópico específico (Ex: Krebs)",
+  "title": "Título épico para o resumo",
+  "summary": "Resumo em Markdown formatado. Inclua Múltiplas Seções (##), Pontos chave em bullets, e pelo menos UMA Analogia no final.",
   "flashcards": [
-    { "front": "pergunta", "back": "resposta" }
+    { 
+      "front": "Pergunta clara e restrita", 
+      "back": "Resposta direta + 🧠 Técnica de Memória (ex: Acrônimo ou Palácio)" 
+    }
   ],
   "questions": [
     {
-      "text": "enunciado",
-      "options": ["A", "B", "C", "D", "E"],
+      "text": "Enunciado complexo da questão",
+      "options": ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "Alternativa E"],
       "correct_answer": 0,
-      "explanation": "por que está correta"
+      "explanation": "Explicação detalhada do gabarito definitivo.",
+      "difficulty": "Médio"
     }
   ]
 }`;
@@ -51,22 +57,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Texto muito curto. Envie conteúdo com pelo menos 50 caracteres.' });
     }
 
-    // 1. Processar com Gemini
-    const prompt = `Processe este conteúdo acadêmico e gere:
-- Resumo Markdown (## seções)
-- 3 Flashcards (frente/verso)
-- 2 Questões ENEM (5 alternativas)
+    // Otimização de payload gigante: Se o texto for absurdamente enorme (ex: 150 mil chars), 
+    // cortamos um pedaço considerável mas seguro, garantindo que caiba no tempo do Vercel
+    const MAX_CHARS = 25000;
+    const processedText = text.length > MAX_CHARS ? text.substring(0, MAX_CHARS) + '... [CORTADO DEVIDO A LIMITES DE TAMANHO]' : text;
 
-${subject ? `MATÉRIA: ${subject}` : ''}
-${topic ? `TÓPICO: ${topic}` : ''}
-ARQUIVO: ${fileName}
+    // 1. Processar com Gemini seguindo pipeline do Super Prompt
+    const prompt = `ALVO: Extração Cognitiva e Parser Estruturado.
 
-CONTEÚDO:
+METADADOS FORNECIDOS PELO USUÁRIO (se disponível):
+${subject ? `- MATÉRIA: ${subject}` : ''}
+${topic ? `- TÓPICO: ${topic}` : ''}
+- ARQUIVO ORIGINAL: ${fileName}
+
+CONTEÚDO BRUTO:
 ---
-${text.substring(0, 10000)}
+${processedText}
 ---
 
-Formato JSON:
+INSTRUÇÕES DE SAÍDA:
+Gere no mínimo:
+- Resumo estruturado do texto (com seções, pontos-chave e analogia).
+- De 5 a 10 Flashcards (com mnemônicos no 'back').
+- De 3 a 5 Questões complexas de múltipla escolha (A-E).
+
+Siga RIGOROSAMENTE o JSON:
 ${JSON_FORMAT}`;
 
     console.log(`📡 [Triturador] Enviando para Gemini (${text.length} chars)...`);
