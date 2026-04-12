@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   ShieldAlert, 
-  BookOpen, 
-  Clock, 
   ChevronRight, 
   Zap, 
   Thermometer, 
@@ -11,10 +9,13 @@ import {
   AlertCircle, 
   Calculator,
   ShieldCheck,
-  Search
+  Search,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sounds } from '../lib/intelligence/SoundService';
+import { ErrorActionableEngine, type ErrorPatologia } from '../lib/intelligence/ErrorActionableEngine';
 
 interface FailedAttempt {
   id: string;
@@ -33,6 +34,8 @@ export function UTI() {
   const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<FailedAttempt | null>(null);
   const [treatmentType, setTreatmentType] = useState<string | null>(null);
+  const [injecting, setInjecting] = useState(false);
+  const [injected, setInjected] = useState(false);
 
   useEffect(() => {
     async function fetchErrors() {
@@ -63,6 +66,29 @@ export function UTI() {
     sounds.playClickAccent();
     setSelectedError(error);
     setTreatmentType(null);
+    setInjected(false);
+  };
+
+  const handleInject = async () => {
+    if (!selectedError || !treatmentType || injecting) return;
+    setInjecting(true);
+    sounds.playClickAccent();
+
+    const success = await ErrorActionableEngine.diagnoseAndInject({
+      question_id: selectedError.id,
+      topic: selectedError.questions?.topic || 'Geral',
+      subject: selectedError.questions?.discipline || 'Geral',
+      patologia: treatmentType as ErrorPatologia,
+      user_id: null,
+    });
+
+    setInjecting(false);
+    if (success) {
+      sounds.playSuccess();
+      setInjected(true);
+    } else {
+      sounds.playError();
+    }
   };
 
   if (loading) {
@@ -105,36 +131,36 @@ export function UTI() {
           <div className="flex flex-col gap-3">
             {errors.length === 0 ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-12 text-center flex flex-col items-center gap-6 border-emerald-500/20 bg-emerald-500/5">
-                 <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
-                    <ShieldCheck className="w-10 h-10 text-emerald-500" />
-                 </div>
-                 <div className="space-y-2">
-                    <h3 className="text-2xl font-black text-white">Nenhuma Ocorrência Crítica!</h3>
-                    <p className="text-text-secondary font-medium">Seu prontuário está limpo. Continue operando com excelência.</p>
-                 </div>
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <ShieldCheck className="w-10 h-10 text-emerald-500" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white">Nenhuma Ocorrência Crítica!</h3>
+                  <p className="text-text-secondary font-medium">Seu prontuário está limpo. Continue operando com excelência.</p>
+                </div>
               </motion.div>
             ) : (
               errors.map((error, idx) => (
-                <motion.button 
-                  key={error.id} 
+                <motion.button
+                  key={error.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => handleSelectError(error)}
                   className={`glass-card p-5 flex items-center justify-between text-left transition-all border-l-4 group ${
-                    selectedError?.id === error.id 
-                      ? 'border-l-indigo-500 bg-indigo-500/10 border-white/10' 
+                    selectedError?.id === error.id
+                      ? 'border-l-indigo-500 bg-indigo-500/10 border-white/10'
                       : 'border-l-red-500 border-white/5 hover:border-white/10'
                   }`}
                 >
                   <div className="flex flex-col gap-2 max-w-md">
                     <div className="flex items-center gap-2">
-                       <span className="px-2 py-0.5 bg-white/5 text-[9px] font-black rounded uppercase tracking-widest text-indigo-400 border border-white/5">
-                         {error.questions.discipline}
-                       </span>
-                       <span className="text-[10px] font-black text-red-400 uppercase tracking-tighter">
-                         {error.questions.topic}
-                       </span>
+                      <span className="px-2 py-0.5 bg-white/5 text-[9px] font-black rounded uppercase tracking-widest text-indigo-400 border border-white/5">
+                        {error.questions.discipline}
+                      </span>
+                      <span className="text-[10px] font-black text-red-400 uppercase tracking-tighter">
+                        {error.questions.topic}
+                      </span>
                     </div>
                     <h4 className="text-sm font-bold text-white group-hover:text-red-400 transition-colors line-clamp-1">
                       {error.questions.text}
@@ -151,7 +177,7 @@ export function UTI() {
         <div className="lg:col-span-5 sticky top-10">
           <AnimatePresence mode="wait">
             {selectedError ? (
-              <motion.div 
+              <motion.div
                 key={selectedError.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -174,18 +200,18 @@ export function UTI() {
                     { id: 'Interpretação', label: 'Interpretação', icon: AlertCircle, color: 'text-indigo-400', bg: 'bg-indigo-500/10', desc: 'Caiu em pegadinha ou distrator.' },
                     { id: 'Cálculo', label: 'Cálculo', icon: Calculator, color: 'text-yellow-400', bg: 'bg-yellow-500/10', desc: 'Erro de conta ou desatenção.' },
                   ].map((strat) => (
-                    <button 
-                       key={strat.id} 
-                       onClick={() => { sounds.playClickAccent(); setTreatmentType(strat.id); }}
-                       className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${treatmentType === strat.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                    <button
+                      key={strat.id}
+                      onClick={() => { sounds.playClickAccent(); setTreatmentType(strat.id); setInjected(false); }}
+                      className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${treatmentType === strat.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                     >
-                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${treatmentType === strat.id ? 'bg-black/10' : strat.bg}`}>
-                          <strat.icon className={`w-5 h-5 ${treatmentType === strat.id ? 'text-black' : strat.color}`} />
-                       </div>
-                       <div className="flex-1">
-                           <div className="font-black text-xs uppercase tracking-widest">{strat.label}</div>
-                           <div className={`text-[10px] font-bold ${treatmentType === strat.id ? 'text-black/60' : 'text-text-secondary'}`}>{strat.desc}</div>
-                       </div>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${treatmentType === strat.id ? 'bg-black/10' : strat.bg}`}>
+                        <strat.icon className={`w-5 h-5 ${treatmentType === strat.id ? 'text-black' : strat.color}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-black text-xs uppercase tracking-widest">{strat.label}</div>
+                        <div className={`text-[10px] font-bold ${treatmentType === strat.id ? 'text-black/60' : 'text-text-secondary'}`}>{strat.desc}</div>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -193,24 +219,36 @@ export function UTI() {
                 <AnimatePresence>
                   {treatmentType && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-6 pt-4 border-t border-white/10">
-                        <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-                            <h5 className="text-[10px] font-black text-indigo-400 uppercase mb-2">Protocolo de Cura Gerado</h5>
-                            <p className="text-xs font-bold text-white leading-relaxed">
-                              O sistema irá injetar <span className="text-primary font-black">5 questões de reforço</span> e <span className="text-primary font-black">1 flashcard de recuperação</span> deste tópico no seu próximo fluxo.
-                            </p>
-                        </div>
-                        <button className="w-full btn-primary py-5 text-xl font-black rounded-3xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3">
-                           <Zap className="w-6 h-6 fill-white" />
-                           INJETAR AGORA
+                      <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+                        <h5 className="text-[10px] font-black text-indigo-400 uppercase mb-2">Protocolo de Cura Gerado</h5>
+                        <p className="text-xs font-bold text-white leading-relaxed">
+                          O sistema irá injetar <span className="text-primary font-black">5 questões de reforço</span> e <span className="text-primary font-black">1 flashcard de recuperação</span> deste tópico no seu próximo fluxo.
+                        </p>
+                      </div>
+
+                      {injected ? (
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center gap-3">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                          <span className="text-emerald-400 font-black text-lg uppercase">Reforço Injetado!</span>
+                        </motion.div>
+                      ) : (
+                        <button
+                          onClick={handleInject}
+                          disabled={injecting}
+                          className="w-full btn-primary py-5 text-xl font-black rounded-3xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-60"
+                        >
+                          {injecting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white" />}
+                          {injecting ? 'INJETANDO...' : 'INJETAR AGORA'}
                         </button>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </motion.div>
             ) : (
               <div className="glass-card p-12 text-center flex flex-col items-center gap-6 border-dashed border-white/10 opacity-30">
-                 <ShieldAlert className="w-20 h-20" />
-                 <p className="text-sm font-black uppercase tracking-widest">Selecione um caso clínico para iniciar o diagnóstico.</p>
+                <ShieldAlert className="w-20 h-20" />
+                <p className="text-sm font-black uppercase tracking-widest">Selecione um caso clínico para iniciar o diagnóstico.</p>
               </div>
             )}
           </AnimatePresence>
