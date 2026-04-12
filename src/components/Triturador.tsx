@@ -14,8 +14,17 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  ChevronUp,
   Sparkles,
 } from 'lucide-react';
+
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Define o worker no topo para evitar carregamentos dinâmicos pesados no React
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // =========================================================
 // TIPOS
@@ -40,32 +49,27 @@ interface ProcessResult {
 // EXTRAÇÃO DE TEXTO DO PDF — usa PDF.js via workerSrc
 // =========================================================
 async function extractTextFromPDF(file: File): Promise<string> {
-  // Instancia fora do loop de renderização para não bloquear o React 19 em operações críticas
-  try {
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
+  return new Promise(async (resolve, reject) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => ('str' in item ? item.str : ''))
+          .join(' ');
+        fullText += pageText + '\n';
+      }
 
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items
-        .map((item: any) => ('str' in item ? item.str : ''))
-        .join(' ');
-      fullText += pageText + '\n';
+      resolve(fullText.trim());
+    } catch (error) {
+      console.error('Erro na extração de PDF:', error);
+      reject(new Error('Falha ao processar o arquivo PDF localmente.'));
     }
-
-    return fullText.trim();
-  } catch (error) {
-    console.error('Erro na extração de PDF:', error);
-    throw new Error('Falha ao processar o arquivo PDF localmente.');
-  }
+  });
 }
 
 // =========================================================
@@ -116,9 +120,7 @@ export function Triturador() {
         setStage('extracting');
         setProgress(20);
         
-        // Timeout pequeno para o React ter chance de renderizar o `stage` antes da operação de IO pesada
-        await new Promise(r => setTimeout(r, 50)); 
-
+        // pdfjs já está importado e pronto - sem delay!
         text = await extractTextFromPDF(file);
 
         if (text.length < 50) {
@@ -362,9 +364,15 @@ export function Triturador() {
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
             >
               {isProcessing ? (
-                <><Loader2 className="w-6 h-6" /> Processando...</>
+                <div className="flex items-center justify-center gap-3 w-full">
+                  <Loader2 className="w-6 h-6 animate-spin" /> 
+                  <span>PROCESSANDO...</span>
+                </div>
               ) : (
-                <><Zap className="w-6 h-6 fill-white" /> Triturar Agora</>
+                <div className="flex items-center justify-center gap-3 w-full">
+                  <Zap className="w-6 h-6 fill-white" /> 
+                  <span>TRITURAR AGORA</span>
+                </div>
               )}
             </button>
 
