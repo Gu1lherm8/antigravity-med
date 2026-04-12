@@ -143,9 +143,11 @@ ${JSON_FORMAT}`;
       if (data.flashcards && Array.isArray(data.flashcards) && topicId) {
         const cards = data.flashcards.map((f: any) => ({
           topic_id: topicId,
-          front_text: f.front,
-          back_text: f.back,
+          front: f.front,
+          back: f.back,
           next_review: new Date().toISOString(),
+          // user_id omitido pois a tabela exige REFERENCES profiles(id). 
+          // Se o RLS permitir, inseriremos sem user_id ou usaremos um fixo.
         }));
 
         const { error: fErr } = await supabaseServer.from('flashcards').insert(cards);
@@ -156,13 +158,13 @@ ${JSON_FORMAT}`;
       // 5. Salvar questões
       if (data.questions && Array.isArray(data.questions)) {
         const questions = data.questions.map((q: any) => ({
-          discipline: subjectName,
-          topic: topicName,
-          question_text: q.text,
-          options: q.options,
-          correct_answer: q.correct_answer,
+          // discipline: subjectName, // Removido se a tabela não tiver
+          // topic: topicName,       // Removido se a tabela usar apenas referências
+          text: q.text,
+          // options: q.options,    // CUIDADO: O esquema não tem a coluna 'options'!
+          correct_answer: String(q.options?.[q.correct_answer] || q.correct_answer),
           explanation: q.explanation,
-          difficulty: q.difficulty || 'media',
+          difficulty: q.difficulty || 'Médio',
           source: fileName,
         }));
 
