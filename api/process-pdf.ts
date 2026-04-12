@@ -52,107 +52,127 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 1. Processar com Gemini
-    const prompt = `Processe o seguinte conteúdo acadêmico e gere material de estudo completo:
+    const prompt = `Processe este conteúdo acadêmico e gere:
+- Resumo Markdown (## seções)
+- 3 Flashcards (frente/verso)
+- 2 Questões ENEM (5 alternativas)
 
-${subject ? `MATÉRIA INFORMADA: ${subject}` : ''}
-${topic ? `TÓPICO INFORMADO: ${topic}` : ''}
+${subject ? `MATÉRIA: ${subject}` : ''}
+${topic ? `TÓPICO: ${topic}` : ''}
 ARQUIVO: ${fileName}
 
 CONTEÚDO:
 ---
-${text.substring(0, 15000)}
+${text.substring(0, 10000)}
 ---
 
-Formato de resposta obrigatório:
+Formato JSON:
 ${JSON_FORMAT}`;
 
+    console.log(`📡 [Triturador] Enviando para Gemini (${text.length} chars)...`);
     const result = await callGemini(prompt, SYSTEM_PROMPT, true);
 
     if (!result.parsed) {
-      throw new Error('IA não retornou JSON válido');
+      console.error('❌ [Triturador] Gemini não retornou JSON:', result.text);
+      throw new Error('A IA não conseguiu estruturar as questões. Tente um texto mais curto.');
     }
 
     const data = result.parsed;
+    console.log('✅ [Triturador] Gemini respondeu. Salvando dados...');
 
     // 2. Buscar ou criar subject e topic no Supabase
     const subjectName = data.subject || subject || 'Geral';
     const topicName = data.topic || topic || 'Geral';
-
-    // Buscar subject
-    let { data: subjectRow } = await supabaseServer
-      .from('subjects')
-      .select('id')
-      .eq('name', subjectName)
-      .maybeSingle();
-
-    if (!subjectRow) {
-      const { data: newSubject } = await supabaseServer
-        .from('subjects')
-        .insert({ name: subjectName, color: '#3b82f6', enem_weight: 3 })
-        .select('id')
-        .single();
-      subjectRow = newSubject;
-    }
-
-    // Buscar topic
-    let { data: topicRow } = await supabaseServer
-      .from('topics')
-      .select('id')
-      .eq('name', topicName)
-      .eq('subject_id', subjectRow?.id)
-      .maybeSingle();
-
-    if (!topicRow && subjectRow) {
-      const { data: newTopic } = await supabaseServer
-        .from('topics')
-        .insert({ name: topicName, subject_id: subjectRow.id, enem_relevance: 3 })
-        .select('id')
-        .single();
-      topicRow = newTopic;
-    }
-
-    const topicId = topicRow?.id;
     const savedItems = { theoryNote: false, flashcards: 0, questions: 0 };
 
-    // 3. Salvar resumo (theory_notes)
-    if (data.summary && topicId) {
-      const { error } = await supabaseServer.from('theory_notes').insert({
-        topic_id: topicId,
-        title: data.title || `Resumo: ${topicName}`,
-        markdown_content: data.summary,
-        original_pdf_name: fileName,
-      });
-      if (!error) savedItems.theoryNote = true;
-    }
+    try {
+      // Buscar subject
+      let { data: subjectRow, error: sErr } = await supabaseServer
+        .from('subjects')
+        .select('id')
+        .eq('name', subjectName)
+        .maybeSingle();
 
-    // 4. Salvar flashcards
-    if (data.flashcards && Array.isArray(data.flashcards) && topicId) {
-      const cards = data.flashcards.map((f: any) => ({
-        topic_id: topicId,
-        front_text: f.front,
-        back_text: f.back,
-        next_review: new Date().toISOString(),
-      }));
+      if (sErr) throw new Error(`Erro ao buscar matéria: ${sErr.message}`);
 
-      const { error } = await supabaseServer.from('flashcards').insert(cards);
-      if (!error) savedItems.flashcards = cards.length;
-    }
+      if (!subjectRow) {
+        const { data: newSubject, error: nsErr } = await supabaseServer
+          .from('subjects')
+          .insert({ name: subjectName, color: '#3b82f6', enem_weight: 3 })
+          .select('id')
+          .single();
+        if (nsErr) throw new Error(`Erro ao criar matéria: ${nsErr.message}`);
+        subjectRow = newSubject;
+      }
 
-    // 5. Salvar questões
-    if (data.questions && Array.isArray(data.questions)) {
-      const questions = data.questions.map((q: any) => ({
-        discipline: subjectName,
-        topic: topicName,
-        question_text: q.text,
-        options: q.options,
-        correct_answer: q.correct_answer,
-        explanation: q.explanation,
-        difficulty: q.difficulty || 'media',
-        source: fileName,
-      }));
+      // Buscar topic
+      let { data: topicRow, error: tErr } = await supabaseServer
+        .from('topics')
+        .select('id')
+        .eq('name', topicName)
+        .eq('subject_id', subjectRow?.id)
+        .maybeSingle();
 
-      const { error } = await supabaseServer.from('questions').insert(questions);
-      if (!error) savedItems.questions = questions.length;
+      if (tErr) throw new Error(`Erro ao buscar tópico: ${tErr.message}`);
+
+      if (!topicRow && subjectRow) {
+        const { data: newTopic, error: ntErr } = await supabaseServer
+          .from('topics')
+          .insert({ name: topicName, subject_id: subjectRow.id, enem_relevance: 3 })
+          .select('id')
+          .single();
+        if (ntErr) throw new Error(`Erro ao criar tópico: ${ntErr.message}`);
+        topicRow = newTopic;
+      }
+
+      const topicId = topicRow?.id;
+
+      // 3. Salvar resumo (theory_notes)
+      if (data.summary && topicId) {
+        const { error: tnErr } = await supabaseServer.from('theory_notes').insert({
+          topic_id: topicId,
+          title: data.title || `Resumo: ${topicName}`,
+          markdown_content: data.summary,
+          original_pdf_name: fileName,
+        });
+        if (tnErr) console.warn('⚠️ [Triturador] Erro ao salvar resumo:', tnErr.message);
+        else savedItems.theoryNote = true;
+      }
+
+      // 4. Salvar flashcards
+      if (data.flashcards && Array.isArray(data.flashcards) && topicId) {
+        const cards = data.flashcards.map((f: any) => ({
+          topic_id: topicId,
+          front_text: f.front,
+          back_text: f.back,
+          next_review: new Date().toISOString(),
+        }));
+
+        const { error: fErr } = await supabaseServer.from('flashcards').insert(cards);
+        if (fErr) console.warn('⚠️ [Triturador] Erro ao salvar flashcards:', fErr.message);
+        else savedItems.flashcards = cards.length;
+      }
+
+      // 5. Salvar questões
+      if (data.questions && Array.isArray(data.questions)) {
+        const questions = data.questions.map((q: any) => ({
+          discipline: subjectName,
+          topic: topicName,
+          question_text: q.text,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+          difficulty: q.difficulty || 'media',
+          source: fileName,
+        }));
+
+        const { error: qErr } = await supabaseServer.from('questions').insert(questions);
+        if (qErr) console.warn('⚠️ [Triturador] Erro ao salvar questões:', qErr.message);
+        else savedItems.questions = questions.length;
+      }
+    } catch (dbErr: any) {
+      console.error('❌ [Triturador] Erro no Supabase:', dbErr.message);
+      // Continuamos para retornar os dados da IA mesmo se o save falhar
     }
 
     return res.status(200).json({
@@ -169,10 +189,11 @@ ${JSON_FORMAT}`;
       data: data,
     });
   } catch (err: any) {
-    console.error('❌ process-pdf error:', err);
+    console.error('❌ [Triturador] Erro fatal:', err.message);
     return res.status(500).json({
       success: false,
-      error: err.message,
+      error: `Erro no Triturador: ${err.message}`,
+      tip: 'Verifique se o texto colado não é excessivamente longo.'
     });
   }
 }

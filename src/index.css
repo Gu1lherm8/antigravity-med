@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@plugin "tailwindcss-animate";
+/* @plugin "tailwindcss-animate"; — Desativado para evitar crash insertBefore no React 19 */
 
 @theme {
   /* Paleta Oficial: Cirurgia Orbital */
