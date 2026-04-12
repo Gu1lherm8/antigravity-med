@@ -1,19 +1,15 @@
 // ============================================================
-// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO ALTA DISPONIBILIDADE)
-// Cliente serverless para Google Gemini com Fallback de modelos
+// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO COMPATIBILIDADE UNIVERSAL)
+// Cliente serverless para Google Gemini com Fallback e Prompt Fusion
 // ============================================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-// Lista de modelos candidatos por ordem de prioridade
-// gemini-2.0-flash: O preferencial para contas pagas
-// gemini-1.5-flash-latest: O cavalo de batalha super estável
-// gemini-2.0-flash-exp: Opção experimental de alto desempenho
+// Modelos estáveis para o canal v1 (Produção)
 const MODELS_FALLBACK = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash-latest', 
   'gemini-1.5-flash',
-  'gemini-2.0-flash-exp'
+  'gemini-1.5-flash-latest', 
+  'gemini-1.5-pro'
 ];
 
 export interface GeminiResponse {
@@ -23,7 +19,7 @@ export interface GeminiResponse {
 }
 
 /**
- * Chama a API Gemini com fallback automático entre modelos em caso de 404/429.
+ * Chama a API Gemini com fusão de prompt (System + User) para máxima compatibilidade.
  */
 export async function callGemini(
   prompt: string,
@@ -33,33 +29,32 @@ export async function callGemini(
 ): Promise<GeminiResponse> {
   let lastError: any = null;
 
-  // Tentamos cada modelo da nossa lista de candidatos
+  // FUSÃO DE PROMPT: Injeta instruções no início para evitar erros de schema v1/v1beta
+  const combinedPrompt = systemInstruction 
+    ? `INSTRUÇÕES DE SISTEMA:\n${systemInstruction}\n\n---\n\nUSUÁRIO:\n${prompt}${expectJSON ? '\n\nIMPORTANTE: Responda APENAS com o JSON válido, sem explicações extras.' : ''}`
+    : prompt;
+
   for (const modelId of MODELS_FALLBACK) {
-    console.log(`📡 [Gemini] Tentando modelo: ${modelId}...`);
-    
-    // Para cada modelo, podemos ter retries internos em caso de timeout
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const body: any = {
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ 
+            role: 'user',
+            parts: [{ text: combinedPrompt }] 
+          }],
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 8192,
+            // Nota: Em v1 estável, removemos responseMimeType e systemInstruction do body 
+            // se estiver dando erro 400, confiando no prompt fusion e no safeParser.
           },
         };
 
-        if (systemInstruction) {
-          body.systemInstruction = { parts: [{ text: systemInstruction }] };
-        }
-
-        if (expectJSON) {
-          body.generationConfig.responseMimeType = 'application/json';
-        }
-
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
+        // URL estável v1
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
         
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 45000); // 45s de fôlego
+        const timeout = setTimeout(() => controller.abort(), 50000);
 
         const response = await fetch(API_URL, {
           method: 'POST',
@@ -70,44 +65,39 @@ export async function callGemini(
 
         clearTimeout(timeout);
 
-        // Se o erro for 404 (Não encontrado) ou 403 (Permissão), pulamos para o PRÓXIMO modelo da lista
         if (response.status === 404 || response.status === 403) {
-          console.warn(`⚠️ [Gemini] Modelo ${modelId} retornou ${response.status}. Tentando próximo da fila...`);
-          lastError = new Error(`Status ${response.status}`);
-          break; // Sai do loop de retry atual e vai pro próximo modelo
+          lastError = new Error(`Modelo ${modelId} não encontrado/bloqueado.`);
+          break; 
         }
 
         if (!response.ok) {
           const errBody = await response.text();
-          throw new Error(`API Gemini Error ${response.status}: ${errBody}`);
+          throw new Error(`Erro ${response.status}: ${errBody}`);
         }
 
         const data = await response.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-        if (!text) throw new Error('Gemini retornou resposta vazia');
+        if (!text) throw new Error('Resposta vazia');
 
         if (expectJSON) {
           const parsed = safeParseJSON(text);
-          if (!parsed) throw new Error('JSON Inválido retornado pela IA');
+          if (!parsed) throw new Error('Falha ao processar JSON da IA');
           return { text, parsed, modelUsed: modelId };
         }
 
-        console.log(`✅ [Gemini] Sucesso absoluto com modelo: ${modelId}`);
         return { text, modelUsed: modelId };
 
       } catch (err: any) {
         lastError = err;
-        // Se for erro de rede ou timeout, tentamos o retry interno do mesmo modelo
         if (attempt < maxRetries) {
-          console.log(`🔄 [Gemini] Re-tentativa ${attempt}/${maxRetries} para ${modelId} devido a: ${err.message}`);
           await new Promise(r => setTimeout(r, 1000));
         }
       }
     }
   }
 
-  throw new Error(`O Triturador IA falhou em todas as tentativas (Modelos: ${MODELS_FALLBACK.join(', ')}). Erro final: ${lastError?.message}`);
+  throw new Error(`O Triturador falhou. Motivo: ${lastError?.message}`);
 }
 
 function safeParseJSON(text: string): any | null {
@@ -117,11 +107,15 @@ function safeParseJSON(text: string): any | null {
     try { return JSON.parse(jsonBlock[1].trim()); } catch {}
   }
   const firstBrace = text.indexOf('{');
-  if (firstBrace !== -1) {
-    try { 
-      const lastBrace = text.lastIndexOf('}');
-      return JSON.parse(text.substring(firstBrace, lastBrace + 1));
-    } catch {}
+  const firstBracket = text.indexOf('[');
+  const start = firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket) ? firstBrace : firstBracket;
+  
+  if (start !== -1) {
+    const closer = text[start] === '[' ? ']' : '}';
+    const end = text.lastIndexOf(closer);
+    if (end !== -1) {
+      try { return JSON.parse(text.substring(start, end + 1)); } catch {}
+    }
   }
   return null;
 }
