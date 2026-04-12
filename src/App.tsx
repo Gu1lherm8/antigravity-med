@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Upload,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
 import type { StudyPlan } from './lib/intelligence/Planner';

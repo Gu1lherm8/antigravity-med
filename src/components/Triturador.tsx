@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload,
   FileText,
@@ -222,9 +221,8 @@ export function Triturador() {
       </div>
 
       {/* ÁREA DE INPUT */}
-      <AnimatePresence mode="wait">
-        {stage !== 'done' && (
-          <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
+      {stage !== 'done' && (
+        <div className="flex flex-col gap-4 animate-in fade-in duration-300">
 
             {mode === 'pdf' ? (
               /* DRAG & DROP */
@@ -312,15 +310,15 @@ export function Triturador() {
 
             {/* ERRO */}
             {error && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl animate-in fade-in slide-in-from-top-2">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
                 <p className="text-sm font-bold text-red-300">{error}</p>
-              </motion.div>
+              </div>
             )}
 
             {/* PROGRESSO */}
             {isProcessing && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5">
+              <div className="flex flex-col gap-4 p-6 glass-card border-indigo-500/20 bg-indigo-500/5 animate-in fade-in">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-indigo-400 animate-spin flex-shrink-0" />
                   <div>
@@ -336,14 +334,13 @@ export function Triturador() {
                   </div>
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full"
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
                   />
                 </div>
                 <p className="text-xs font-black text-indigo-400/60 text-right">{progress}%</p>
-              </motion.div>
+              </div>
             )}
 
             {/* BOTÃO */}
@@ -361,14 +358,12 @@ export function Triturador() {
               )}
             </button>
 
-          </motion.div>
+          </div>
         )}
 
-        {/* ========================================================
-            RESULTADO
-            ======================================================== */}
+        {/* RESULTADO */}
         {stage === 'done' && result && (
-          <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
             {/* BANNER DE SUCESSO */}
             <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center gap-4">
@@ -477,10 +472,9 @@ export function Triturador() {
             <p className="text-xs text-center text-text-secondary/40 font-bold">
               Todo o material foi salvo automaticamente · Acesse na <span className="text-primary cursor-pointer">Biblioteca</span>
             </p>
-          </motion.div>
+          </div>
         )}
 
-      </AnimatePresence>
     </div>
   );
 }

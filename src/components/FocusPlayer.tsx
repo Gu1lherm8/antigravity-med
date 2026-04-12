@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { 
   X, 
   ChevronRight, 
@@ -113,7 +112,7 @@ export function FocusPlayer({ plan, onClose }: FocusPlayerProps) {
   if (completed) {
      return (
         <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-6 bg-gradient-to-b from-indigo-900/40 to-background backdrop-blur-3xl">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card p-12 max-w-xl text-center border-indigo-500/50 shadow-[0_0_80px_rgba(79,70,229,0.3)]">
+            <div className="glass-card p-12 max-w-xl text-center border-indigo-500/50 shadow-[0_0_80px_rgba(79,70,229,0.3)] animate-in zoom-in-95 duration-500">
                 <Trophy className="w-24 h-24 text-yellow-400 mx-auto mb-8 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
                 <h2 className="text-4xl font-black text-white mb-4">MISSAO CUMPRIDA!</h2>
                 <p className="text-text-secondary text-lg mb-10 leading-relaxed">Você seguiu o piloto automático e eliminou as lacunas de hoje. <br />Sua rede neural agradece.</p>
@@ -128,7 +127,7 @@ export function FocusPlayer({ plan, onClose }: FocusPlayerProps) {
                     </div>
                 </div>
                 <button onClick={onClose} className="btn-primary w-full py-5 text-xl font-black rounded-3xl">Retornar à Unidade</button>
-            </motion.div>
+            </div>
         </div>
      );
   }
@@ -172,13 +171,9 @@ export function FocusPlayer({ plan, onClose }: FocusPlayerProps) {
       <main className="flex-1 overflow-y-auto px-6 py-12">
         <div className="max-w-4xl mx-auto flex flex-col gap-10">
           
-          <AnimatePresence mode="wait">
-            <motion.div 
+            <div 
                key={currentTask.id}
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="flex flex-col gap-8"
+               className="flex flex-col gap-8 animate-in fade-in slide-in-from-right-4 duration-300"
             >
                {/* TEMA DA MISSÃO ATUAL */}
                <div className="flex flex-col gap-2">
@@ -212,43 +207,43 @@ export function FocusPlayer({ plan, onClose }: FocusPlayerProps) {
                                  ))}
                               </div>
                            ) : (
-                              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                                 <div className={`p-8 rounded-3xl border-2 flex items-center gap-6 ${selectedOpt === questions[qIdx].correct_answer ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-red-500/10 border-red-500/50 text-red-400'}`}>
-                                    {selectedOpt === questions[qIdx].correct_answer ? <CheckCircle2 className="w-12 h-12" /> : <AlertCircle className="w-12 h-12" />}
-                                    <div>
-                                       <h3 className="text-2xl font-black uppercase tracking-tighter">{selectedOpt === questions[qIdx].correct_answer ? 'Diagnóstico Correto!' : 'Patologia Detectada'}</h3>
-                                       <p className="text-sm font-bold opacity-80">Gabarito: Alternativa {questions[qIdx].correct_answer}</p>
-                                    </div>
-                                 </div>
-                                 
-                                 {/* FEEDBACK DE ERRO (SOLICITADO) */}
-                                 {selectedOpt !== questions[qIdx].correct_answer && (
-                                    <div className="flex flex-col gap-4 bg-white/5 p-6 rounded-2xl border border-white/5">
-                                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Classifique o motivo do erro</p>
-                                       <div className="flex gap-2">
-                                          {['Teoria', 'Interpretação', 'Cálculo'].map(t => (
-                                             <button 
-                                                key={t}
-                                                onClick={() => { sounds.playClickAccent(); setErrorType(t); }}
-                                                className={`flex-1 py-4 rounded-xl border-2 text-xs font-black transition-all ${errorType === t ? 'bg-red-500 border-red-400 text-white scale-105' : 'bg-transparent border-white/10 text-text-secondary hover:border-white/20'}`}
-                                             >{t}</button>
-                                          ))}
-                                       </div>
-                                    </div>
-                                 )}
+                               <div className="space-y-6 animate-in fade-in duration-300">
+                                  <div className={`p-8 rounded-3xl border-2 flex items-center gap-6 ${selectedOpt === questions[qIdx].correct_answer ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-red-500/10 border-red-500/50 text-red-400'}`}>
+                                     {selectedOpt === questions[qIdx].correct_answer ? <CheckCircle2 className="w-12 h-12" /> : <AlertCircle className="w-12 h-12" />}
+                                     <div>
+                                        <h3 className="text-2xl font-black uppercase tracking-tighter">{selectedOpt === questions[qIdx].correct_answer ? 'Diagnóstico Correto!' : 'Patologia Detectada'}</h3>
+                                        <p className="text-sm font-bold opacity-80">Gabarito: Alternativa {questions[qIdx].correct_answer}</p>
+                                     </div>
+                                  </div>
+                                  
+                                  {/* FEEDBACK DE ERRO (SOLICITADO) */}
+                                  {selectedOpt !== questions[qIdx].correct_answer && (
+                                     <div className="flex flex-col gap-4 bg-white/5 p-6 rounded-2xl border border-white/5">
+                                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Classifique o motivo do erro</p>
+                                        <div className="flex gap-2">
+                                           {['Teoria', 'Interpretação', 'Cálculo'].map(t => (
+                                              <button 
+                                                 key={t}
+                                                 onClick={() => { sounds.playClickAccent(); setErrorType(t); }}
+                                                 className={`flex-1 py-4 rounded-xl border-2 text-xs font-black transition-all ${errorType === t ? 'bg-red-500 border-red-400 text-white scale-105' : 'bg-transparent border-white/10 text-text-secondary hover:border-white/20'}`}
+                                              >{t}</button>
+                                           ))}
+                                        </div>
+                                     </div>
+                                  )}
 
-                                 <div className="p-8 bg-white/5 rounded-3xl border border-white/5 border-l-4 border-l-indigo-400">
-                                    <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">Explicação Clínica</h4>
-                                    <p className="text-text-secondary leading-relaxed font-bold italic">
-                                       "Este tópico exige atenção às bases de {currentTask.topic}. O erro aqui indica uma falha na correlação entre os dados do enunciado e a base teórica."
-                                    </p>
-                                 </div>
+                                  <div className="p-8 bg-white/5 rounded-3xl border border-white/5 border-l-4 border-l-indigo-400">
+                                     <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">Explicação Clínica</h4>
+                                     <p className="text-text-secondary leading-relaxed font-bold italic">
+                                        "Este tópico exige atenção às bases de {currentTask.topic}. O erro aqui indica uma falha na correlação entre os dados do enunciado e a base teórica."
+                                     </p>
+                                  </div>
 
-                                 <button onClick={handleNextQuestion} className="w-full btn-primary py-5 text-xl font-black flex items-center justify-center gap-4">
-                                    {qIdx < questions.length - 1 ? 'Próxima Questão' : 'Concluir Bloco'}
-                                    <ChevronRight className="w-6 h-6" />
-                                 </button>
-                              </motion.div>
+                                  <button onClick={handleNextQuestion} className="w-full btn-primary py-5 text-xl font-black flex items-center justify-center gap-4">
+                                     {qIdx < questions.length - 1 ? 'Próxima Questão' : 'Concluir Bloco'}
+                                     <ChevronRight className="w-6 h-6" />
+                                  </button>
+                               </div>
                            )}
                         </div>
                      ) : (
@@ -303,33 +298,32 @@ export function FocusPlayer({ plan, onClose }: FocusPlayerProps) {
                      <button onClick={handleNextTask} className="w-full btn-primary py-5 text-xl font-black">Mostrar Resposta</button>
                   </div>
                )}
-            </motion.div>
-          </AnimatePresence>
+            </div>
 
-          {/* RODAPÉ DO SELETOR DE CONFIANÇA */}
-          {currentTask.type === 'QUESTOES' && selectedOpt && !showExplanation && (
-             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6">
-                <div className="glass-card p-6 bg-black/80 backdrop-blur-3xl border-white/10 flex flex-col gap-4 shadow-2xl">
-                   <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] text-center">Nível de Segurança para o Algoritmo</h4>
-                   <div className="flex gap-2">
-                     {[1, 2, 3, 4, 5].map(v => (
-                        <button 
-                           key={v}
-                           onClick={() => setConfidence(v)}
-                           className={`flex-1 py-4 rounded-xl border-2 font-black transition-all ${confidence === v ? 'bg-indigo-600 border-indigo-400 text-white scale-105' : 'bg-transparent border-white/5 text-text-secondary hover:border-white/10'}`}
-                        >{v}</button>
-                     ))}
-                   </div>
-                   <button 
-                     disabled={confidence === null || submitting}
-                     onClick={() => { sounds.playClickAccent(); handleAnswer(); }}
-                     className="w-full py-5 bg-white text-black font-black rounded-3xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all disabled:opacity-30 shadow-2xl"
-                   >
-                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'CONFIRMAR DIAGNÓSTICO'}
-                   </button>
-                </div>
-             </motion.div>
-          )}
+           {/* RODAPÉ DO SELETOR DE CONFIANÇA */}
+           {currentTask.type === 'QUESTOES' && selectedOpt && !showExplanation && (
+              <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 animate-in slide-in-from-bottom-8 duration-300">
+                 <div className="glass-card p-6 bg-black/80 backdrop-blur-3xl border-white/10 flex flex-col gap-4 shadow-2xl">
+                    <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] text-center">Nível de Segurança para o Algoritmo</h4>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(v => (
+                         <button 
+                            key={v}
+                            onClick={() => setConfidence(v)}
+                            className={`flex-1 py-4 rounded-xl border-2 font-black transition-all ${confidence === v ? 'bg-indigo-600 border-indigo-400 text-white scale-105' : 'bg-transparent border-white/5 text-text-secondary hover:border-white/20'}`}
+                         >{v}</button>
+                      ))}
+                    </div>
+                    <button 
+                      disabled={confidence === null || submitting}
+                      onClick={() => { sounds.playClickAccent(); handleAnswer(); }}
+                      className="w-full py-5 bg-white text-black font-black rounded-3xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all disabled:opacity-30 shadow-2xl"
+                    >
+                      {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'CONFIRMAR DIAGNÓSTICO'}
+                    </button>
+                 </div>
+              </div>
+           )}
 
         </div>
       </main>

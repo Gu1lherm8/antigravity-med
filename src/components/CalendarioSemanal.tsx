@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Plus, X, Check, Edit3, Clock,
   BookOpen, HelpCircle, RotateCcw, Layers, Palette, Trash2,
@@ -53,7 +52,6 @@ function getWeekStart(date: Date): string {
   const d = new Date(date);
   const day = d.getDay();
   d.setDate(d.getDate() - day);
-  // Usar fuso local para evitar que o ISOString pule um dia à noite
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
@@ -74,7 +72,6 @@ export function CalendarioSemanal() {
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalEntry | null>(null);
-  const [modalDia, setModalDia] = useState<number | null>(null);
   const [selected, setSelected] = useState<ScheduleEntry | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<UserPreferences>({ hours_per_day: 4, days_per_week: 5, intensity: 'Moderada' });
@@ -134,7 +131,6 @@ export function CalendarioSemanal() {
       color: '#6366f1',
       notes: '',
     });
-    setModalDia(day);
   }
 
   async function saveEntry() {
@@ -169,8 +165,6 @@ export function CalendarioSemanal() {
 
   async function gerarSemanaV2() {
     setLoading(true);
-    
-    // 1. Buscar Informações de Performance
     const [{ data: subjects }, { data: sessions }] = await Promise.all([
       supabase.from('subjects').select('*, topics(*)'),
       supabase.from('study_sessions').select('*')
@@ -182,38 +176,29 @@ export function CalendarioSemanal() {
       return;
     }
 
-    // 2. Calcular Pesos Adaptativos
     const weightedSubjects = subjects.map(sub => {
       const subSessions = sessions?.filter(s => s.subject_id === sub.id) || [];
       const avgAccuracy = subSessions.length > 0 
         ? subSessions.reduce((acc, s) => acc + (s.correct_answers/s.total_questions), 0) / subSessions.length
-        : 0.7; // Default 70% se não houver dados
+        : 0.7;
       
       const errorRate = 1 - avgAccuracy;
       const enemWeight = sub.topics?.reduce((acc: number, t: any) => acc + (t.enem_weight || 1), 0) / (sub.topics?.length || 1);
-      
-      // Fórmula Adaptativa V2
       const weight = (enemWeight * 2) + (errorRate * 15) + (prefs.intensity === 'Hardcore' ? 5 : 2);
-      
       return { ...sub, weight };
     }).sort((a, b) => b.weight - a.weight);
 
-    // 3. Gerar Blocos baseados nas Preferências
     const newEntries: any[] = [];
     const startHour = 8;
     const daysToGenerate = prefs.days_per_week;
 
     for (let d = 1; d <= daysToGenerate; d++) {
       let currentHour = startHour;
-      const subjectsForDay = weightedSubjects.slice(0, Math.min(weightedSubjects.length, 3)); // Rodar as top 3 do dia
+      const subjectsForDay = weightedSubjects.slice(0, Math.min(weightedSubjects.length, 3));
 
       subjectsForDay.forEach((sub, idx) => {
         if (currentHour >= startHour + prefs.hours_per_day) return;
-
-        // Distribui: Aula -> Questão -> Revisão dependendo do peso
         const color = sub.color || CORES[idx % CORES.length];
-        
-        // Bloco de Aula
         newEntries.push({
           week_start: weekStart,
           day_of_week: d,
@@ -227,7 +212,6 @@ export function CalendarioSemanal() {
         });
         currentHour += 1.5;
 
-        // Bloco de Questões (se sobrar tempo)
         if (currentHour < startHour + prefs.hours_per_day) {
           newEntries.push({
             week_start: weekStart,
@@ -243,8 +227,6 @@ export function CalendarioSemanal() {
           currentHour += 1;
         }
       });
-
-      // Shuffling weights para o próximo dia
       weightedSubjects.push(weightedSubjects.shift()!); 
     }
 
@@ -260,8 +242,7 @@ export function CalendarioSemanal() {
   });
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
-      {/* Header */}
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-white">🗓️ Calendário Semanal</h2>
@@ -296,7 +277,6 @@ export function CalendarioSemanal() {
         </div>
       </div>
 
-      {/* Grade do calendário */}
       <div className="grid grid-cols-7 gap-3">
         {semana.map((dia, idx) => {
           const isHoje = dia.toDateString() === new Date().toDateString();
@@ -306,51 +286,40 @@ export function CalendarioSemanal() {
             <div key={idx} className={`flex flex-col gap-2 min-h-[280px] rounded-2xl p-3 border transition-all ${
               isHoje ? 'border-primary/40 bg-primary/5' : 'border-white/5 bg-white/[0.02]'
             }`}>
-              {/* Cabeçalho do dia */}
               <div className="flex flex-col items-center pb-2 border-b border-white/10">
-                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest" translate="no">{DIAS[idx]}</span>
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{DIAS[idx]}</span>
                 <span className={`text-lg font-black mt-0.5 ${isHoje ? 'text-primary' : 'text-white'}`}>
                   {dia.getDate()}
                 </span>
                 {isHoje && <span className="text-[9px] font-black text-primary uppercase tracking-widest">Hoje</span>}
               </div>
 
-              {/* Blocos de atividades */}
               <div className="flex flex-col gap-1.5 flex-1">
-                <AnimatePresence>
-                  {entriesDoDia.map(entry => (
-                    <motion.button
-                      key={entry.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      onClick={() => setSelected(entry)}
-                      className={`w-full text-left rounded-lg px-2 py-1.5 transition-all hover:brightness-110 ${
-                        entry.status === 'concluido' ? 'opacity-50' : ''
-                      }`}
-                      style={{ backgroundColor: entry.color + '25', borderLeft: `3px solid ${entry.color}` }}
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <span className="text-[10px] shrink-0">{TIPO_CONFIG[entry.activity_type]?.emoji || '📌'}</span>
-                          <span className="text-[10px] font-bold text-white truncate">{entry.title}</span>
-                        </div>
-                        <Trash2 
-                          className="w-3 h-3 text-white/20 hover:text-red-400 transition-colors shrink-0" 
-                          onClick={(e) => { e.stopPropagation(); deleteEntry(entry.id); }}
-                        />
+                {entriesDoDia.map(entry => (
+                  <button
+                    key={entry.id}
+                    onClick={() => setSelected(entry)}
+                    className={`w-full text-left rounded-lg px-2 py-1.5 transition-all hover:brightness-110 animate-in fade-in zoom-in-95 duration-200 ${
+                      entry.status === 'concluido' ? 'opacity-50' : ''
+                    }`}
+                    style={{ backgroundColor: entry.color + '25', borderLeft: `3px solid ${entry.color}` }}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="text-[10px] shrink-0">{TIPO_CONFIG[entry.activity_type]?.emoji || '📌'}</span>
+                        <span className="text-[10px] font-bold text-white truncate">{entry.title}</span>
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Clock className="w-2 h-2 text-white/50" />
-                        <span className="text-[9px] text-white/50">{entry.start_time?.slice(0,5)} • {entry.duration_minutes}min</span>
-                      </div>
-                      {entry.status === 'concluido' && <Check className="w-2.5 h-2.5 text-emerald-400 mt-0.5" />}
-                    </motion.button>
-                  ))}
-                </AnimatePresence>
+                      <Trash2 className="w-3 h-3 text-white/20 hover:text-red-400 transition-colors shrink-0" onClick={(e) => { e.stopPropagation(); deleteEntry(entry.id); }} />
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Clock className="w-2 h-2 text-white/50" />
+                      <span className="text-[9px] text-white/50">{entry.start_time?.slice(0,5)} • {entry.duration_minutes}min</span>
+                    </div>
+                    {entry.status === 'concluido' && <Check className="w-2.5 h-2.5 text-emerald-400 mt-0.5" />}
+                  </button>
+                ))}
               </div>
 
-              {/* Botão adicionar */}
               <button
                 onClick={() => openAdd(idx)}
                 className="flex items-center justify-center gap-1 py-1.5 rounded-xl border border-dashed border-white/10 text-text-secondary hover:border-primary/30 hover:text-primary transition-all text-xs"
@@ -362,7 +331,6 @@ export function CalendarioSemanal() {
         })}
       </div>
 
-      {/* Legenda */}
       <div className="flex items-center gap-4 flex-wrap">
         <span className="text-xs text-text-secondary font-bold uppercase tracking-widest">Legenda:</span>
         {Object.entries(TIPO_CONFIG).map(([key, val]) => (
@@ -373,156 +341,147 @@ export function CalendarioSemanal() {
         ))}
       </div>
 
-      {/* Modal — Detalhes/Edição de entrada */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-md">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center text-xl" style={{ backgroundColor: selected.color + '30' }}>
-                    {TIPO_CONFIG[selected.activity_type]?.emoji || '📌'}
-                  </div>
-                  <h3 className="text-xl font-black text-white">{selected.title}</h3>
-                  <p className="text-text-secondary text-sm">{DIAS_FULL[selected.day_of_week]} • {selected.start_time?.slice(0,5)} • {selected.duration_minutes}min</p>
+      {selected && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelected(null)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-md animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center text-xl" style={{ backgroundColor: selected.color + '30' }}>
+                  {TIPO_CONFIG[selected.activity_type]?.emoji || '📌'}
                 </div>
-                <button onClick={() => setSelected(null)} className="text-text-secondary hover:text-white p-1"><X className="w-5 h-5" /></button>
+                <h3 className="text-xl font-black text-white">{selected.title}</h3>
+                <p className="text-text-secondary text-sm">{DIAS_FULL[selected.day_of_week]} • {selected.start_time?.slice(0,5)} • {selected.duration_minutes}min</p>
               </div>
-              {selected.subject_name && <p className="text-sm text-text-secondary mb-4">📖 {selected.subject_name}</p>}
-              {selected.notes && <p className="text-sm text-white/70 mb-4">{selected.notes}</p>}
-              <div className="flex gap-3">
-                <button onClick={() => toggleStatus(selected)} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${selected.status === 'concluido' ? 'bg-white/10 text-white' : 'bg-emerald-500 text-white'}`}>
-                  <Check className="w-4 h-4" /> {selected.status === 'concluido' ? 'Reabrir' : 'Concluir'}
-                </button>
-                <button onClick={() => { setModal({ ...selected }); setSelected(null); }} className="px-4 py-3 rounded-2xl bg-white/5 text-text-secondary hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
-                <button onClick={() => deleteEntry(selected.id)} className="px-4 py-3 rounded-2xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => setSelected(null)} className="text-text-secondary hover:text-white p-1"><X className="w-5 h-5" /></button>
+            </div>
+            {selected.subject_name && <p className="text-sm text-text-secondary mb-4">📖 {selected.subject_name}</p>}
+            {selected.notes && <p className="text-sm text-white/70 mb-4">{selected.notes}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => toggleStatus(selected)} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${selected.status === 'concluido' ? 'bg-white/10 text-white' : 'bg-emerald-500 text-white'}`}>
+                <Check className="w-4 h-4" /> {selected.status === 'concluido' ? 'Reabrir' : 'Concluir'}
+              </button>
+              <button onClick={() => { setModal({ ...selected }); setSelected(null); }} className="px-4 py-3 rounded-2xl bg-white/5 text-text-secondary hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
+              <button onClick={() => deleteEntry(selected.id)} className="px-4 py-3 rounded-2xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal !== null && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-lg animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-white">{modal.id ? 'Editar Bloco' : `+ Novo Bloco — ${DIAS_FULL[modal.day_of_week]}`}</h3>
+              <button onClick={() => setModal(null)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Título *</label>
+                <input value={modal.title} onChange={e => setModal({ ...modal, title: e.target.value })} placeholder="Ex: Aula de Genética" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none" />
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Modal — Adicionar/Editar bloco */}
-      <AnimatePresence>
-        {modal !== null && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setModal(null)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-lg">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-black text-white">{modal.id ? 'Editar Bloco' : `+ Novo Bloco — ${DIAS_FULL[modal.day_of_week]}`}</h3>
-                <button onClick={() => setModal(null)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>
-              </div>
-
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Título *</label>
-                  <input value={modal.title} onChange={e => setModal({ ...modal, title: e.target.value })} placeholder="Ex: Aula de Genética" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none" />
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Tipo</label>
+                  <select value={modal.activity_type} onChange={e => setModal({ ...modal, activity_type: e.target.value, color: TIPO_CONFIG[e.target.value]?.cor || modal.color })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50">
+                    {Object.entries(TIPO_CONFIG).map(([k, v]) => <option key={k} value={k} className="bg-[#0A0C14]">{v.emoji} {v.label}</option>)}
+                  </select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Tipo</label>
-                    <select value={modal.activity_type} onChange={e => setModal({ ...modal, activity_type: e.target.value, color: TIPO_CONFIG[e.target.value]?.cor || modal.color })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50">
-                      {Object.entries(TIPO_CONFIG).map(([k, v]) => <option key={k} value={k} className="bg-[#0A0C14]">{v.emoji} {v.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Matéria</label>
-                    <input value={modal.subject_name} onChange={e => setModal({ ...modal, subject_name: e.target.value })} placeholder="Ex: Biologia" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Horário</label>
-                    <input type="time" value={modal.start_time} onChange={e => setModal({ ...modal, start_time: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Duração (min)</label>
-                    <input type="number" value={modal.duration_minutes} onChange={e => setModal({ ...modal, duration_minutes: parseInt(e.target.value) || 30 })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50" />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block flex items-center gap-1"><Palette className="w-3 h-3" /> Cor</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {CORES.map(cor => (
-                      <button key={cor} onClick={() => setModal({ ...modal, color: cor })} className="w-8 h-8 rounded-xl transition-all hover:scale-110" style={{ backgroundColor: cor, outline: modal.color === cor ? `3px solid ${cor}` : 'none', outlineOffset: 2 }} />
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Anotações</label>
-                  <textarea value={modal.notes} onChange={e => setModal({ ...modal, notes: e.target.value })} placeholder="Observações opcionais..." rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none resize-none" />
-                </div>
-
-                <button onClick={saveEntry} className="w-full py-4 bg-primary rounded-2xl font-black text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all">
-                  {modal.id ? 'Salvar Alterações' : 'Adicionar ao Calendário'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal — Configurações do Planner */}
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowSettings(false)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={e => e.stopPropagation()} className="glass-card p-8 w-full max-w-md border-primary/30">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Settings className="w-6 h-6" /></div>
-                <div>
-                  <h3 className="text-xl font-black text-white">Configurações do Plano</h3>
-                  <p className="text-xs text-text-secondary font-bold uppercase tracking-widest">Motor Adaptativo V2</p>
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Matéria</label>
+                  <input value={modal.subject_name} onChange={e => setModal({ ...modal, subject_name: e.target.value })} placeholder="Ex: Biologia" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none" />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Horas por Dia</label>
-                  <input type="range" min="1" max="12" value={prefs.hours_per_day} onChange={e => setPrefs({ ...prefs, hours_per_day: parseInt(e.target.value) })} className="w-full accent-primary bg-white/5 h-2 rounded-lg" />
-                  <div className="flex justify-between mt-2"><span className="text-xs font-bold text-text-secondary">1h</span><span className="text-sm font-black text-primary">{prefs.hours_per_day}h Disponíveis</span><span className="text-xs font-bold text-text-secondary">12h</span></div>
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Horário</label>
+                  <input type="time" value={modal.start_time} onChange={e => setModal({ ...modal, start_time: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50" />
                 </div>
-
                 <div>
-                  <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Dias por Semana</label>
-                  <div className="flex gap-2">
-                    {[5, 6, 7].map(d => (
-                      <button key={d} onClick={() => setPrefs({ ...prefs, days_per_week: d })} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${prefs.days_per_week === d ? 'bg-primary text-white' : 'bg-white/5 text-text-secondary hover:bg-white/10'}`}>
-                        {d} Dias
-                      </button>
-                    ))}
-                  </div>
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Duração (min)</label>
+                  <input type="number" value={modal.duration_minutes} onChange={e => setModal({ ...modal, duration_minutes: parseInt(e.target.value) || 30 })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary/50" />
                 </div>
-
-                <div>
-                  <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Intensidade de Estudo</label>
-                  <div className="flex flex-col gap-2">
-                    {['Leve', 'Moderada', 'Hardcore'].map(i => (
-                      <button key={i} onClick={() => setPrefs({ ...prefs, intensity: i as any })} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${prefs.intensity === i ? 'bg-primary/10 border-primary text-white' : 'bg-white/5 border-white/10 text-text-secondary hover:bg-white/10'}`}>
-                        <span className="font-bold">{i}</span>
-                        {prefs.intensity === i && <Check className="w-4 h-4" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-                  <p className="text-[10px] text-amber-200/70 font-medium leading-relaxed">
-                    A intensidade **Hardcore** aumenta a frequência de blocos de questões e simulados baseados em seus erros recentes.
-                  </p>
-                </div>
-
-                <button onClick={() => savePreferences(prefs)} className="w-full py-4 btn-primary font-black">
-                  Salvar Preferências
-                </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block flex items-center gap-1"><Palette className="w-3 h-3" /> Cor</label>
+                <div className="flex gap-2 flex-wrap">
+                  {CORES.map(cor => (
+                    <button key={cor} onClick={() => setModal({ ...modal, color: cor })} className="w-8 h-8 rounded-xl transition-all hover:scale-110" style={{ backgroundColor: cor, outline: modal.color === cor ? `3px solid ${cor}` : 'none', outlineOffset: 2 }} />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2 block">Anotações</label>
+                <textarea value={modal.notes} onChange={e => setModal({ ...modal, notes: e.target.value })} placeholder="Observações opcionais..." rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-text-secondary focus:border-primary/50 outline-none resize-none" />
+              </div>
+
+              <button onClick={saveEntry} className="w-full py-4 bg-primary rounded-2xl font-black text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all">
+                {modal.id ? 'Salvar Alterações' : 'Adicionar ao Calendário'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowSettings(false)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-8 w-full max-w-md border-primary/30 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Settings className="w-6 h-6" /></div>
+              <div>
+                <h3 className="text-xl font-black text-white">Configurações do Plano</h3>
+                <p className="text-xs text-text-secondary font-bold uppercase tracking-widest">Motor Adaptativo V2</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <div>
+                <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Horas por Dia</label>
+                <input type="range" min="1" max="12" value={prefs.hours_per_day} onChange={e => setPrefs({ ...prefs, hours_per_day: parseInt(e.target.value) })} className="w-full accent-primary bg-white/5 h-2 rounded-lg" />
+                <div className="flex justify-between mt-2"><span className="text-xs font-bold text-text-secondary">1h</span><span className="text-sm font-black text-primary">{prefs.hours_per_day}h Disponíveis</span><span className="text-xs font-bold text-text-secondary">12h</span></div>
+              </div>
+
+              <div>
+                <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Dias por Semana</label>
+                <div className="flex gap-2">
+                  {[5, 6, 7].map(d => (
+                    <button key={d} onClick={() => setPrefs({ ...prefs, days_per_week: d })} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${prefs.days_per_week === d ? 'bg-primary text-white' : 'bg-white/5 text-text-secondary hover:bg-white/10'}`}>
+                      {d} Dias
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-black text-text-secondary uppercase tracking-widest mb-3 block">Intensidade de Estudo</label>
+                <div className="flex flex-col gap-2">
+                  {['Leve', 'Moderada', 'Hardcore'].map(i => (
+                    <button key={i} onClick={() => setPrefs({ ...prefs, intensity: i as any })} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${prefs.intensity === i ? 'bg-primary/10 border-primary text-white' : 'bg-white/5 border-white/10 text-text-secondary hover:bg-white/10'}`}>
+                      <span className="font-bold">{i}</span>
+                      {prefs.intensity === i && <Check className="w-4 h-4" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                <p className="text-[10px] text-amber-200/70 font-medium leading-relaxed">
+                  A intensidade **Hardcore** aumenta a frequência de blocos de questões e simulados baseados em seus erros recentes.
+                </p>
+              </div>
+
+              <button onClick={() => savePreferences(prefs)} className="w-full py-4 btn-primary font-black">
+                Salvar Preferências
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

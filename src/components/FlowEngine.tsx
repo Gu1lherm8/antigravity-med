@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, CheckCircle2, Clock, Zap, BookOpen, 
   Target, AlertTriangle, ChevronRight, Loader2, Play, Trophy,
@@ -181,10 +180,9 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
             <div className="flex items-center gap-3">
               <span className="font-black text-xl italic">{currentIdx + 1}<span className="text-white/20">/</span>{queue.length}</span>
               <div className="w-48 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                <motion.div 
-                   className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                   initial={{ width: 0 }}
-                   animate={{ width: `${((currentIdx + 1) / queue.length) * 100}%` }}
+                <div 
+                   className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all duration-700"
+                   style={{ width: `${((currentIdx + 1) / queue.length) * 100}%` }}
                 />
               </div>
             </div>
@@ -192,17 +190,14 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
         </div>
         
         <div className="flex items-center gap-4">
-          <AnimatePresence>
-            {streak >= 3 && (
-              <motion.div 
-                initial={{ scale: 0, x: 20 }} animate={{ scale: 1, x: 0 }} exit={{ scale: 0 }}
-                className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30"
-              >
-                <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
-                <span className="text-xs font-black text-orange-400">{streak} STREAK</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {streak >= 3 && (
+            <div 
+              className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30 animate-in zoom-in-95 duration-200"
+            >
+              <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
+              <span className="text-xs font-black text-orange-400">{streak} STREAK</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
              <div className="flex flex-col items-end">
@@ -229,14 +224,10 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
       </div>
 
       <main className="flex-1 overflow-y-auto px-8 py-12 scrollbar-none bg-[radial-gradient(circle_at_50%_0%,rgba(30,58,138,0.1),transparent)]">
-        <AnimatePresence mode="wait">
           {mode === 'study' && (
-            <motion.div 
+            <div 
               key="study"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="max-w-4xl mx-auto flex flex-col items-center text-center"
+              className="max-w-4xl mx-auto flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8 duration-500"
             >
               <div className="mb-10 relative">
                 <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
@@ -283,16 +274,13 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                 </span>
                 <ChevronRight className="w-8 h-8 text-white/50" />
               </button>
-            </motion.div>
+            </div>
           )}
 
           {mode === 'questions' && questions.length > 0 && (
-            <motion.div 
+            <div 
               key="questions"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, x: -50 }}
-              className="max-w-3xl mx-auto"
+              className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500"
             >
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-6">
@@ -359,11 +347,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                   </button>
                 </div>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-10 rounded-[2.5rem] border-2 border-white/5 bg-white/[0.03] backdrop-blur-3xl shadow-2xl mb-32 relative overflow-hidden"
-                >
+                <div className="p-10 rounded-[2.5rem] border-2 border-white/5 bg-white/[0.03] backdrop-blur-3xl shadow-2xl mb-32 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
                   <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
                     <ShieldCheck className="w-32 h-32" />
                   </div>
@@ -381,17 +365,15 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                     {qIdx < questions.length - 1 ? 'Próxima Questão' : 'Ver Resultado do Módulo'}
                     <ChevronRight className="w-7 h-7" />
                   </button>
-                </motion.div>
+                </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {mode === 'result' && (
-            <motion.div 
+            <div 
               key="result"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="max-w-3xl mx-auto text-center py-10"
+              className="max-w-3xl mx-auto text-center py-10 animate-in zoom-in-95 duration-500"
             >
               <div className="relative inline-block mb-12">
                 <div className="absolute inset-0 bg-blue-500/40 blur-3xl rounded-full animate-pulse" />
@@ -435,9 +417,8 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                   Auditar Ciclo de Erros
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </main>
 
       {/* FOOTER: PRECEPTOR TELEMETRY */}

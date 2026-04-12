@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, CheckSquare, Square, AlertCircle, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const C5_ELEMENTS = [
   { id: 'agente', label: 'AGENTE', description: 'Quem executa? (Ex: Ministério da Saúde, GDF)', icon: '🕵️‍♂️' },
@@ -56,9 +55,9 @@ export function C5Checklist() {
                     {checked.includes(elem.id) ? <CheckSquare className="w-4 h-4 text-indigo-400" /> : <Square className="w-4 h-4" />}
                 </div>
                 {checked.includes(elem.id) && (
-                    <motion.p initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="text-[10px] font-medium leading-relaxed mt-1 text-indigo-200/60 italic overflow-hidden">
+                    <p className="text-[10px] font-medium leading-relaxed mt-1 text-indigo-200/60 italic overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
                         {elem.description}
-                    </motion.p>
+                    </p>
                 )}
             </div>
           </button>
@@ -76,20 +75,18 @@ export function C5Checklist() {
             </div>
           </div>
           
-          <AnimatePresence>
             {score < 200 && (
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl animate-in fade-in slide-in-from-right-2 duration-200">
                     <AlertCircle className="w-4 h-4 text-red-400" />
                     <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Incompleto</span>
-                </motion.div>
+                </div>
             )}
             {score === 200 && (
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl animate-in zoom-in-95 duration-200">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Apta p/ 1000</span>
-                </motion.div>
+                </div>
             )}
-          </AnimatePresence>
       </footer>
     </div>
   );

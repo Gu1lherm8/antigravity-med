@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, CheckCircle2, Circle, Clock, Sun, Sunset, Moon,
-  ChevronRight, Trophy, AlertTriangle, Play
+  Trophy, AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -48,7 +47,7 @@ const ACTIVITY_EMOJI: Record<string, string> = {
 export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
   const [missions, setMissions] = useState<DailyMission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeMission, setActiveMission] = useState<string | null>(null);
+  const [activeMission] = useState<string | null>(null);
   const [preceptorFrase] = useState(() => PRECEPTOR_FRASES[Math.floor(Math.random() * PRECEPTOR_FRASES.length)]);
 
   const today = new Date().toISOString().split('T')[0];
@@ -115,7 +114,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header com Preceptor */}
       <div className="relative overflow-hidden rounded-3xl border border-red-500/30 bg-red-500/5 p-6">
         <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-transparent to-transparent" />
@@ -143,11 +142,9 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
           </div>
         </div>
         <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden mb-6">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_15px_rgba(var(--primary),0.5)]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progresso}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all duration-700"
+            style={{ width: `${progresso}%` }}
           />
         </div>
         
@@ -161,9 +158,9 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
         )}
 
         {progresso === 100 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 flex items-center gap-2 text-emerald-400 font-bold justify-center bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20">
+          <div className="mt-4 flex items-center gap-2 text-emerald-400 font-bold justify-center bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20 animate-in fade-in duration-500">
             <Trophy className="w-5 h-5" /> Dia completo! Missão cumprida. 🏆
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -211,20 +208,17 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
               </div>
 
               <div className="flex flex-col gap-2">
-                <AnimatePresence>
                   {msDoPeriodo.sort((a, b) => a.order_index - b.order_index).map((mission, idx) => (
-                    <motion.div
+                    <div
                       key={mission.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all animate-in fade-in slide-in-from-left-4 duration-300 ${
                         mission.completed
                           ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
                           : activeMission === mission.id
                           ? 'border-primary/50 bg-primary/10'
                           : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
                       }`}
+                      style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleMission(mission.id, mission.completed); }}
@@ -256,14 +250,13 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
                           <span>{mission.duration_minutes}min</span>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
-                </AnimatePresence>
               </div>
             </div>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }

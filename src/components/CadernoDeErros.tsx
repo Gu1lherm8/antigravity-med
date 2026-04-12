@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, ChevronDown, ChevronUp, CheckCircle2, Clock,
   RefreshCw, Star, AlertCircle, X, Filter, Trophy, Zap, Trash2
@@ -114,7 +113,7 @@ export function CadernoDeErros() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -177,198 +176,183 @@ export function CadernoDeErros() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <AnimatePresence>
-            {filtrados.map((entry, idx) => {
-              const cor = DISCIPLINE_COLORS[entry.discipline] || '#6b7280';
-              const isOpen = expandido === entry.id;
+          {filtrados.map((entry, idx) => {
+            const cor = DISCIPLINE_COLORS[entry.discipline] || '#6b7280';
+            const isOpen = expandido === entry.id;
 
-              return (
-                <motion.div
-                  key={entry.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: idx * 0.03 }}
-                  className={`rounded-2xl border transition-all group ${entry.mastered ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02]'}`}
+            return (
+              <div
+                key={entry.id}
+                className={`rounded-2xl border transition-all group animate-in fade-in duration-300 ${entry.mastered ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02]'}`}
+                style={{ animationDelay: `${idx * 30}ms` }}
+              >
+                {/* Cabeçalho do card */}
+                <div
+                  className="w-full flex items-center gap-4 p-4 text-left cursor-pointer select-none"
+                  onClick={() => setExpandido(isOpen ? null : entry.id)}
+                  role="button"
+                  tabIndex={0}
                 >
-                  {/* Cabeçalho do card */}
-                  <div
-                    className="w-full flex items-center gap-4 p-4 text-left cursor-pointer select-none"
-                    onClick={() => setExpandido(isOpen ? null : entry.id)}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="w-1.5 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: cor }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-lg" style={{ backgroundColor: cor + '20', color: cor }}>{entry.discipline}</span>
-                        {entry.topic && <span className="text-xs text-text-secondary">{entry.topic}</span>}
-                        {entry.mastered && <span className="text-xs font-black text-emerald-400 ml-auto flex items-center gap-1"><Trophy className="w-3 h-3" /> DOMINADO</span>}
-                      </div>
-                      <p className="text-sm font-bold text-white line-clamp-2">{entry.question_text}</p>
+                  <div className="w-1.5 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: cor }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg" style={{ backgroundColor: cor + '20', color: cor }}>{entry.discipline}</span>
+                      {entry.topic && <span className="text-xs text-text-secondary">{entry.topic}</span>}
+                      {entry.mastered && <span className="text-xs font-black text-emerald-400 ml-auto flex items-center gap-1"><Trophy className="w-3 h-3" /> DOMINADO</span>}
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-center">
-                        <p className="text-sm font-black text-white">{entry.times_correct_after}/3</p>
-                        <p className="text-[9px] text-text-secondary">acertos</p>
+                    <p className="text-sm font-bold text-white line-clamp-2">{entry.question_text}</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-center">
+                      <p className="text-sm font-black text-white">{entry.times_correct_after}/3</p>
+                      <p className="text-[9px] text-text-secondary">acertos</p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); deleteError(entry.id); }}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all opacity-0 group-hover:opacity-100 z-10"
+                      title="Excluir Erro"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    {isOpen ? <ChevronUp className="w-4 h-4 text-text-secondary" /> : <ChevronDown className="w-4 h-4 text-text-secondary" />}
+                  </div>
+                </div>
+
+                {/* Detalhes expandidos */}
+                {isOpen && (
+                  <div className="overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                    <div className="px-6 pb-6 flex flex-col gap-4">
+                      <div className="w-full h-px bg-white/10" />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {entry.wrong_answer && (
+                          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                            <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Resposta Errada</p>
+                            <p className="text-sm text-white">{entry.wrong_answer}</p>
+                          </div>
+                        )}
+                        {entry.correct_answer && (
+                          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Resposta Correta</p>
+                            <p className="text-sm text-white">{entry.correct_answer}</p>
+                          </div>
+                        )}
                       </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); deleteError(entry.id); }}
-                        className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all opacity-0 group-hover:opacity-100 z-10"
-                        title="Excluir Erro"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      {isOpen ? <ChevronUp className="w-4 h-4 text-text-secondary" /> : <ChevronDown className="w-4 h-4 text-text-secondary" />}
+
+                      {entry.error_reason && (
+                        <div className="p-3 rounded-xl bg-white/5">
+                          <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">⚠️ Motivo do Erro</p>
+                          <p className="text-sm text-white/80">{entry.error_reason}</p>
+                        </div>
+                      )}
+
+                      {entry.simple_explanation && (
+                        <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">💡 Explicação Simples</p>
+                          <p className="text-sm text-white/80">{entry.simple_explanation}</p>
+                        </div>
+                      )}
+
+                      {entry.recommended_action && (
+                        <div className="p-3 rounded-xl bg-white/5">
+                          <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">🎯 Ação Recomendada</p>
+                          <p className="text-sm text-white/80">{entry.recommended_action}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-text-secondary">
+                          <Clock className="w-3 h-3" />
+                          Revisado {entry.times_reviewed}x • Última: {new Date(entry.last_reviewed_at).toLocaleDateString('pt-BR')}
+                        </div>
+                        {!entry.mastered && (
+                          <div className="flex gap-2">
+                            <button onClick={() => markReviewed(entry.id, false)} className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all flex items-center gap-1">
+                              <X className="w-3 h-3" /> Errei de novo
+                            </button>
+                            <button onClick={() => markReviewed(entry.id, true)} className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Acertei!
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Barra de progresso do domínio */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">Domínio</span>
+                          <span className="text-[10px] text-text-secondary">{entry.times_correct_after}/3 acertos consecutivos</span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-1.5">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${Math.min((entry.times_correct_after / 3) * 100, 100)}%`, backgroundColor: cor }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Detalhes expandidos */}
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-6 pb-6 flex flex-col gap-4">
-                          <div className="w-full h-px bg-white/10" />
-
-                          <div className="grid grid-cols-2 gap-4">
-                            {entry.wrong_answer && (
-                              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Resposta Errada</p>
-                                <p className="text-sm text-white">{entry.wrong_answer}</p>
-                              </div>
-                            )}
-                            {entry.correct_answer && (
-                              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Resposta Correta</p>
-                                <p className="text-sm text-white">{entry.correct_answer}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {entry.error_reason && (
-                            <div className="p-3 rounded-xl bg-white/5">
-                              <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">⚠️ Motivo do Erro</p>
-                              <p className="text-sm text-white/80">{entry.error_reason}</p>
-                            </div>
-                          )}
-
-                          {entry.simple_explanation && (
-                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">💡 Explicação Simples</p>
-                              <p className="text-sm text-white/80">{entry.simple_explanation}</p>
-                            </div>
-                          )}
-
-                          {entry.recommended_action && (
-                            <div className="p-3 rounded-xl bg-white/5">
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">🎯 Ação Recomendada</p>
-                              <p className="text-sm text-white/80">{entry.recommended_action}</p>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-text-secondary">
-                              <Clock className="w-3 h-3" />
-                              Revisado {entry.times_reviewed}x • Última: {new Date(entry.last_reviewed_at).toLocaleDateString('pt-BR')}
-                            </div>
-                            {!entry.mastered && (
-                              <div className="flex gap-2">
-                                <button onClick={() => markReviewed(entry.id, false)} className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all flex items-center gap-1">
-                                  <X className="w-3 h-3" /> Errei de novo
-                                </button>
-                                <button onClick={() => markReviewed(entry.id, true)} className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" /> Acertei!
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Barra de progresso do domínio */}
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">Domínio</span>
-                              <span className="text-[10px] text-text-secondary">{entry.times_correct_after}/3 acertos consecutivos</span>
-                            </div>
-                            <div className="w-full bg-white/5 rounded-full h-1.5">
-                              <div
-                                className="h-full rounded-full transition-all"
-                                style={{ width: `${Math.min((entry.times_correct_after / 3) * 100, 100)}%`, backgroundColor: cor }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Modal — Registrar novo erro */}
-      <AnimatePresence>
-        {formAberto && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="glass-card p-6 w-full max-w-lg my-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-black text-white">📕 Registrar Erro</h3>
-                <button onClick={() => setFormAberto(false)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+      {formAberto && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="glass-card p-6 w-full max-w-lg my-8 animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-white">📕 Registrar Erro</h3>
+              <button onClick={() => setFormAberto(false)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="label-form">Questão / Enunciado *</label>
+                <textarea value={novoErro.question_text} onChange={e => setNovoErro({ ...novoErro, question_text: e.target.value })} placeholder="Descreva o que foi perguntado..." rows={3} className="w-full input-form resize-none" />
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label-form">Questão / Enunciado *</label>
-                  <textarea value={novoErro.question_text} onChange={e => setNovoErro({ ...novoErro, question_text: e.target.value })} placeholder="Descreva o que foi perguntado..." rows={3} className="w-full input-form resize-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label-form">Matéria</label>
-                    <select value={novoErro.discipline} onChange={e => setNovoErro({ ...novoErro, discipline: e.target.value })} className="w-full input-form">
-                      {Object.keys(DISCIPLINE_COLORS).map(d => <option key={d} value={d} className="bg-[#0A0C14]">{d}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-form">Tópico</label>
-                    <input value={novoErro.topic} onChange={e => setNovoErro({ ...novoErro, topic: e.target.value })} placeholder="Ex: Genética" className="w-full input-form" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label-form">Minha Resposta (errada)</label>
-                    <input value={novoErro.wrong_answer} onChange={e => setNovoErro({ ...novoErro, wrong_answer: e.target.value })} placeholder="Ex: Alternativa B" className="w-full input-form" />
-                  </div>
-                  <div>
-                    <label className="label-form">Resposta Correta</label>
-                    <input value={novoErro.correct_answer} onChange={e => setNovoErro({ ...novoErro, correct_answer: e.target.value })} placeholder="Ex: Alternativa D" className="w-full input-form" />
-                  </div>
+                  <label className="label-form">Matéria</label>
+                  <select value={novoErro.discipline} onChange={e => setNovoErro({ ...novoErro, discipline: e.target.value })} className="w-full input-form">
+                    {Object.keys(DISCIPLINE_COLORS).map(d => <option key={d} value={d} className="bg-[#0A0C14]">{d}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="label-form">Por que errei?</label>
-                  <textarea value={novoErro.error_reason} onChange={e => setNovoErro({ ...novoErro, error_reason: e.target.value })} placeholder="Confundi os conceitos, não estudei este tópico..." rows={2} className="w-full input-form resize-none" />
+                  <label className="label-form">Tópico</label>
+                  <input value={novoErro.topic} onChange={e => setNovoErro({ ...novoErro, topic: e.target.value })} placeholder="Ex: Genética" className="w-full input-form" />
                 </div>
-                <div>
-                  <label className="label-form">Explicação Simples</label>
-                  <textarea value={novoErro.simple_explanation} onChange={e => setNovoErro({ ...novoErro, simple_explanation: e.target.value })} placeholder="Em palavras simples, o conceito correto é..." rows={2} className="w-full input-form resize-none" />
-                </div>
-                <div>
-                  <label className="label-form">Ação Recomendada</label>
-                  <input value={novoErro.recommended_action} onChange={e => setNovoErro({ ...novoErro, recommended_action: e.target.value })} placeholder="Ex: Rever aula de Meiose, fazer 5 questões deste tópico" className="w-full input-form" />
-                </div>
-                <button onClick={saveNovoErro} className="w-full py-4 bg-primary rounded-2xl font-black text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all">
-                  Registrar no Caderno
-                </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label-form">Minha Resposta (errada)</label>
+                  <input value={novoErro.wrong_answer} onChange={e => setNovoErro({ ...novoErro, wrong_answer: e.target.value })} placeholder="Ex: Alternativa B" className="w-full input-form" />
+                </div>
+                <div>
+                  <label className="label-form">Resposta Correta</label>
+                  <input value={novoErro.correct_answer} onChange={e => setNovoErro({ ...novoErro, correct_answer: e.target.value })} placeholder="Ex: Alternativa D" className="w-full input-form" />
+                </div>
+              </div>
+              <div>
+                <label className="label-form">Por que errei?</label>
+                <textarea value={novoErro.error_reason} onChange={e => setNovoErro({ ...novoErro, error_reason: e.target.value })} placeholder="Confundi os conceitos, não estudei este tópico..." rows={2} className="w-full input-form resize-none" />
+              </div>
+              <div>
+                <label className="label-form">Explicação Simples</label>
+                <textarea value={novoErro.simple_explanation} onChange={e => setNovoErro({ ...novoErro, simple_explanation: e.target.value })} placeholder="Em palavras simples, o conceito correto é..." rows={2} className="w-full input-form resize-none" />
+              </div>
+              <div>
+                <label className="label-form">Ação Recomendada</label>
+                <input value={novoErro.recommended_action} onChange={e => setNovoErro({ ...novoErro, recommended_action: e.target.value })} placeholder="Ex: Rever aula de Meiose, fazer 5 questões deste tópico" className="w-full input-form" />
+              </div>
+              <button onClick={saveNovoErro} className="w-full py-4 bg-primary rounded-2xl font-black text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all">
+                Registrar no Caderno
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

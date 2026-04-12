@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Stethoscope
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export function Auth() {
   const [loading, setLoading] = useState(false);
@@ -54,11 +53,7 @@ export function Auth() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#0EA5E9]/20 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" />
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md z-10"
-      >
+      <div className="w-full max-w-md z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-[#0EA5E9] mx-auto rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0EA5E9]/40 mb-6 group transition-transform hover:scale-110">
             <Zap className="w-10 h-10 text-white fill-white" />
@@ -118,30 +113,18 @@ export function Auth() {
               </div>
             </div>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-xl flex items-center gap-3"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  {error}
-                </motion.div>
-              )}
-              {message && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-3"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  {message}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-xl flex items-center gap-3 animate-in zoom-in-95 duration-200">
+                <ShieldCheck className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+            {message && (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-3 animate-in zoom-in-95 duration-200">
+                <ShieldCheck className="w-4 h-4" />
+                {message}
+              </div>
+            )}
 
             <button 
               type="submit"
@@ -174,7 +157,7 @@ export function Auth() {
         <p className="mt-8 text-center text-[9px] text-[#94A3B8]/40 font-bold uppercase tracking-[0.2em]">
           Antigravity Medicina // Versão de Deploy GitHub 2026.
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

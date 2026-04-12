@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Loader2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { sounds } from '../lib/intelligence/SoundService';
 import { ErrorActionableEngine, type ErrorPatologia } from '../lib/intelligence/ErrorActionableEngine';
 
@@ -130,7 +129,7 @@ export function UTI() {
 
           <div className="flex flex-col gap-3">
             {errors.length === 0 ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-12 text-center flex flex-col items-center gap-6 border-emerald-500/20 bg-emerald-500/5">
+              <div className="glass-card p-12 text-center flex flex-col items-center gap-6 border-emerald-500/20 bg-emerald-500/5 animate-in fade-in duration-500">
                 <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
                   <ShieldCheck className="w-10 h-10 text-emerald-500" />
                 </div>
@@ -138,20 +137,18 @@ export function UTI() {
                   <h3 className="text-2xl font-black text-white">Nenhuma Ocorrência Crítica!</h3>
                   <p className="text-text-secondary font-medium">Seu prontuário está limpo. Continue operando com excelência.</p>
                 </div>
-              </motion.div>
+              </div>
             ) : (
               errors.map((error, idx) => (
-                <motion.button
+                <button
                   key={error.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
                   onClick={() => handleSelectError(error)}
-                  className={`glass-card p-5 flex items-center justify-between text-left transition-all border-l-4 group ${
+                  className={`glass-card p-5 flex items-center justify-between text-left transition-all border-l-4 group animate-in fade-in slide-in-from-left-4 duration-300 ${
                     selectedError?.id === error.id
                       ? 'border-l-indigo-500 bg-indigo-500/10 border-white/10'
                       : 'border-l-red-500 border-white/5 hover:border-white/10'
                   }`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="flex flex-col gap-2 max-w-md">
                     <div className="flex items-center gap-2">
@@ -167,7 +164,7 @@ export function UTI() {
                     </h4>
                   </div>
                   <ChevronRight className={`w-5 h-5 transition-transform ${selectedError?.id === error.id ? 'translate-x-1 text-white' : 'text-text-secondary'}`} />
-                </motion.button>
+                </button>
               ))
             )}
           </div>
@@ -175,14 +172,10 @@ export function UTI() {
 
         {/* PAINEL DE TRATAMENTO */}
         <div className="lg:col-span-5 sticky top-10">
-          <AnimatePresence mode="wait">
             {selectedError ? (
-              <motion.div
+              <div
                 key={selectedError.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="glass-card p-8 border-indigo-500/30 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8"
+                className="glass-card p-8 border-indigo-500/30 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8 animate-in zoom-in-95 duration-300"
               >
                 <header className="space-y-4">
                   <div className="flex items-center justify-between text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
@@ -216,42 +209,39 @@ export function UTI() {
                   ))}
                 </div>
 
-                <AnimatePresence>
-                  {treatmentType && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-6 pt-4 border-t border-white/10">
-                      <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-                        <h5 className="text-[10px] font-black text-indigo-400 uppercase mb-2">Protocolo de Cura Gerado</h5>
-                        <p className="text-xs font-bold text-white leading-relaxed">
-                          O sistema irá injetar <span className="text-primary font-black">5 questões de reforço</span> e <span className="text-primary font-black">1 flashcard de recuperação</span> deste tópico no seu próximo fluxo.
-                        </p>
-                      </div>
+                {treatmentType && (
+                  <div className="space-y-6 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+                      <h5 className="text-[10px] font-black text-indigo-400 uppercase mb-2">Protocolo de Cura Gerado</h5>
+                      <p className="text-xs font-bold text-white leading-relaxed">
+                        O sistema irá injetar <span className="text-primary font-black">5 questões de reforço</span> e <span className="text-primary font-black">1 flashcard de recuperação</span> deste tópico no seu próximo fluxo.
+                      </p>
+                    </div>
 
-                      {injected ? (
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center gap-3">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                          <span className="text-emerald-400 font-black text-lg uppercase">Reforço Injetado!</span>
-                        </motion.div>
-                      ) : (
-                        <button
-                          onClick={handleInject}
-                          disabled={injecting}
-                          className="w-full btn-primary py-5 text-xl font-black rounded-3xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-60"
-                        >
-                          {injecting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white" />}
-                          {injecting ? 'INJETANDO...' : 'INJETAR AGORA'}
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                    {injected ? (
+                      <div className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center gap-3 animate-in zoom-in-95 duration-200">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                        <span className="text-emerald-400 font-black text-lg uppercase">Reforço Injetado!</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleInject}
+                        disabled={injecting}
+                        className="w-full btn-primary py-5 text-xl font-black rounded-3xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-60"
+                      >
+                        {injecting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white" />}
+                        {injecting ? 'INJETANDO...' : 'INJETAR AGORA'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="glass-card p-12 text-center flex flex-col items-center gap-6 border-dashed border-white/10 opacity-30">
                 <ShieldAlert className="w-20 h-20" />
                 <p className="text-sm font-black uppercase tracking-widest">Selecione um caso clínico para iniciar o diagnóstico.</p>
               </div>
             )}
-          </AnimatePresence>
         </div>
       </div>
     </div>

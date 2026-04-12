@@ -3,7 +3,6 @@ import { Play, Clock, Target, Zap, ChevronRight, Sparkles, ShieldCheck } from 'l
 import { getPilotPlan } from '../lib/intelligence/intelligenceQueries';
 import type { StudyPlan } from '../lib/intelligence/Planner';
 import { sounds } from '../lib/intelligence/SoundService';
-import { motion } from 'framer-motion';
 
 interface ActiveCommanderProps {
   onStartPilot: (plan: StudyPlan) => void;
@@ -53,11 +52,7 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
   if (!plan) return null;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="w-full flex flex-col gap-6"
-    >
+    <div className="w-full flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="relative group">
         {/* GLOW DE FUNDO */}
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-indigo-500/50 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
@@ -126,16 +121,10 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
 
               <div className="flex flex-col gap-4">
                 {plan.tasks.slice(0, 4).map((task, idx) => (
-                  <motion.div 
+                  <div 
                     key={task.id}
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className={`flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all ${
-                      idx === 0 
-                        ? 'bg-white/10 border-white/20' 
-                        : 'bg-white/[0.03] border-white/5 opacity-60'
-                    }`}
+                    className={`flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all animate-in fade-in slide-in-from-right-4 duration-300`}
+                    style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${
                       idx === 0 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-text-secondary'
@@ -151,7 +140,7 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
                       </div>
                     </div>
                     {idx === 0 && <ChevronRight className="w-5 h-5 text-white/40" />}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
 
@@ -165,6 +154,6 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

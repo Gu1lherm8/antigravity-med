@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { 
   BarChart3, 
   Calendar, 
@@ -117,13 +116,10 @@ export function PainelGlobal() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {stats.map((subject, idx) => (
-              <motion.div 
+              <div 
                 key={subject.subject_id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="glass-card p-6 flex flex-col gap-4 border-l-4"
-                style={{ borderLeftColor: subject.color }}
+                className="glass-card p-6 flex flex-col gap-4 border-l-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                style={{ borderLeftColor: subject.color, animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -138,11 +134,9 @@ export function PainelGlobal() {
                 </div>
                 
                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${subject.accuracy}%` }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: subject.color }}
+                  <div 
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${subject.accuracy}%`, backgroundColor: subject.color }}
                   />
                 </div>
 
@@ -150,7 +144,7 @@ export function PainelGlobal() {
                   <span>META: 80%</span>
                   <span>{subject.accuracy < 80 ? `FALTAM ${80 - subject.accuracy}%` : 'META ATINGIDA'}</span>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
