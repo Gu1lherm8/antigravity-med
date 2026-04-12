@@ -335,7 +335,7 @@ export function Triturador() {
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all "
                     style={{ width: `${progress}%` }}
                   />
                 </div>

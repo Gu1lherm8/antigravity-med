@@ -104,7 +104,7 @@ function StarRating({
 function Toast({ msg, type }: { msg: string; type: 'ok' | 'err' }) {
   return (
     <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl
-      border font-bold text-sm animate-in slide-in-from-bottom-4 duration-300
+      border font-bold text-sm   
       ${type === 'ok'
         ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
         : 'bg-red-500/20 border-red-500/40 text-red-400'
@@ -1018,7 +1018,7 @@ export function Materias() {
           {subjects.map(subject => (
             <div
               key={subject.id}
-              className="relative group rounded-3xl overflow-hidden cursor-pointer transition-all duration-300
+              className="relative group rounded-3xl overflow-hidden cursor-pointer transition-all 
                 hover:scale-[1.02] hover:shadow-2xl"
               style={{ boxShadow: `0 4px 30px ${subject.color}22` }}
               onClick={() => setActiveSubject(subject)}

@@ -181,7 +181,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
               <span className="font-black text-xl italic">{currentIdx + 1}<span className="text-white/20">/</span>{queue.length}</span>
               <div className="w-48 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                 <div 
-                   className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all duration-700"
+                   className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all "
                    style={{ width: `${((currentIdx + 1) / queue.length) * 100}%` }}
                 />
               </div>
@@ -192,7 +192,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
         <div className="flex items-center gap-4">
           {streak >= 3 && (
             <div 
-              className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30 animate-in zoom-in-95 duration-200"
+              className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 rounded-full border border-orange-500/30   "
             >
               <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
               <span className="text-xs font-black text-orange-400">{streak} STREAK</span>
@@ -227,7 +227,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
           {mode === 'study' && (
             <div 
               key="study"
-              className="max-w-4xl mx-auto flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8 duration-500"
+              className="max-w-4xl mx-auto flex flex-col items-center text-center    "
             >
               <div className="mb-10 relative">
                 <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
@@ -268,7 +268,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                 onClick={() => currentTask?.type === 'questoes' ? setMode('questions') : nextTask()}
                 className="group relative w-full max-w-xl py-6 bg-blue-600 rounded-[1.5rem] flex items-center justify-center gap-4 overflow-hidden shadow-[0_20px_50px_rgba(37,99,235,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform " />
                 <span className="text-white font-black text-2xl uppercase tracking-[0.1em]">
                   {currentTask?.type === 'questoes' ? 'Iniciar Diagnóstico' : 'Confirmar Conclusão'}
                 </span>
@@ -280,7 +280,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
           {mode === 'questions' && questions.length > 0 && (
             <div 
               key="questions"
-              className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500"
+              className="max-w-3xl mx-auto    "
             >
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-6">
@@ -347,7 +347,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                   </button>
                 </div>
               ) : (
-                <div className="p-10 rounded-[2.5rem] border-2 border-white/5 bg-white/[0.03] backdrop-blur-3xl shadow-2xl mb-32 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="p-10 rounded-[2.5rem] border-2 border-white/5 bg-white/[0.03] backdrop-blur-3xl shadow-2xl mb-32 relative overflow-hidden    ">
                   <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
                     <ShieldCheck className="w-32 h-32" />
                   </div>
@@ -373,7 +373,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
           {mode === 'result' && (
             <div 
               key="result"
-              className="max-w-3xl mx-auto text-center py-10 animate-in zoom-in-95 duration-500"
+              className="max-w-3xl mx-auto text-center py-10   "
             >
               <div className="relative inline-block mb-12">
                 <div className="absolute inset-0 bg-blue-500/40 blur-3xl rounded-full animate-pulse" />
@@ -413,7 +413,7 @@ export function FlowEngine({ initialQueue, period = 'manha', onClose }: FlowEngi
                   onClick={() => setMode('questions')}
                   className="flex items-center justify-center gap-3 text-white/30 font-black uppercase text-sm tracking-[0.3em] py-6 hover:text-white transition-all group"
                 >
-                  <RotateCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" />
+                  <RotateCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform " />
                   Auditar Ciclo de Erros
                 </button>
               </div>

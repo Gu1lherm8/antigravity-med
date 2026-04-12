@@ -113,7 +113,7 @@ export function CadernoDeErros() {
   );
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-8    ">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -183,7 +183,7 @@ export function CadernoDeErros() {
             return (
               <div
                 key={entry.id}
-                className={`rounded-2xl border transition-all group animate-in fade-in duration-300 ${entry.mastered ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02]'}`}
+                className={`rounded-2xl border transition-all group    ${entry.mastered ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02]'}`}
                 style={{ animationDelay: `${idx * 30}ms` }}
               >
                 {/* Cabeçalho do card */}
@@ -220,7 +220,7 @@ export function CadernoDeErros() {
 
                 {/* Detalhes expandidos */}
                 {isOpen && (
-                  <div className="overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                  <div className="overflow-hidden   ">
                     <div className="px-6 pb-6 flex flex-col gap-4">
                       <div className="w-full h-px bg-white/10" />
 
@@ -301,8 +301,8 @@ export function CadernoDeErros() {
 
       {/* Modal — Registrar novo erro */}
       {formAberto && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="glass-card p-6 w-full max-w-lg my-8 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto   ">
+          <div className="glass-card p-6 w-full max-w-lg my-8   ">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black text-white">📕 Registrar Erro</h3>
               <button onClick={() => setFormAberto(false)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>

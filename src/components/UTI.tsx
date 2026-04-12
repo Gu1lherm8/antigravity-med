@@ -129,7 +129,7 @@ export function UTI() {
 
           <div className="flex flex-col gap-3">
             {errors.length === 0 ? (
-              <div className="glass-card p-12 text-center flex flex-col items-center gap-6 border-emerald-500/20 bg-emerald-500/5 animate-in fade-in duration-500">
+              <div className="glass-card p-12 text-center flex flex-col items-center gap-6 border-emerald-500/20 bg-emerald-500/5   ">
                 <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
                   <ShieldCheck className="w-10 h-10 text-emerald-500" />
                 </div>
@@ -143,7 +143,7 @@ export function UTI() {
                 <button
                   key={error.id}
                   onClick={() => handleSelectError(error)}
-                  className={`glass-card p-5 flex items-center justify-between text-left transition-all border-l-4 group animate-in fade-in slide-in-from-left-4 duration-300 ${
+                  className={`glass-card p-5 flex items-center justify-between text-left transition-all border-l-4 group     ${
                     selectedError?.id === error.id
                       ? 'border-l-indigo-500 bg-indigo-500/10 border-white/10'
                       : 'border-l-red-500 border-white/5 hover:border-white/10'
@@ -175,7 +175,7 @@ export function UTI() {
             {selectedError ? (
               <div
                 key={selectedError.id}
-                className="glass-card p-8 border-indigo-500/30 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8 animate-in zoom-in-95 duration-300"
+                className="glass-card p-8 border-indigo-500/30 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8   "
               >
                 <header className="space-y-4">
                   <div className="flex items-center justify-between text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
@@ -210,7 +210,7 @@ export function UTI() {
                 </div>
 
                 {treatmentType && (
-                  <div className="space-y-6 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="space-y-6 pt-4 border-t border-white/10    ">
                     <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
                       <h5 className="text-[10px] font-black text-indigo-400 uppercase mb-2">Protocolo de Cura Gerado</h5>
                       <p className="text-xs font-bold text-white leading-relaxed">
@@ -219,7 +219,7 @@ export function UTI() {
                     </div>
 
                     {injected ? (
-                      <div className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center gap-3 animate-in zoom-in-95 duration-200">
+                      <div className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center gap-3   ">
                         <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                         <span className="text-emerald-400 font-black text-lg uppercase">Reforço Injetado!</span>
                       </div>

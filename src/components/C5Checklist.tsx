@@ -55,7 +55,7 @@ export function C5Checklist() {
                     {checked.includes(elem.id) ? <CheckSquare className="w-4 h-4 text-indigo-400" /> : <Square className="w-4 h-4" />}
                 </div>
                 {checked.includes(elem.id) && (
-                    <p className="text-[10px] font-medium leading-relaxed mt-1 text-indigo-200/60 italic overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                    <p className="text-[10px] font-medium leading-relaxed mt-1 text-indigo-200/60 italic overflow-hidden    ">
                         {elem.description}
                     </p>
                 )}
@@ -76,13 +76,13 @@ export function C5Checklist() {
           </div>
           
             {score < 200 && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl animate-in fade-in slide-in-from-right-2 duration-200">
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl    ">
                     <AlertCircle className="w-4 h-4 text-red-400" />
                     <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Incompleto</span>
                 </div>
             )}
             {score === 200 && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl animate-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl   ">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Apta p/ 1000</span>
                 </div>

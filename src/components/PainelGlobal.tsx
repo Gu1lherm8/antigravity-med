@@ -118,7 +118,7 @@ export function PainelGlobal() {
             {stats.map((subject, idx) => (
               <div 
                 key={subject.subject_id}
-                className="glass-card p-6 flex flex-col gap-4 border-l-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                className="glass-card p-6 flex flex-col gap-4 border-l-4    "
                 style={{ borderLeftColor: subject.color, animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex justify-between items-start">
@@ -135,7 +135,7 @@ export function PainelGlobal() {
                 
                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                   <div 
-                    className="h-full rounded-full transition-all duration-1000"
+                    className="h-full rounded-full transition-all "
                     style={{ width: `${subject.accuracy}%`, backgroundColor: subject.color }}
                   />
                 </div>

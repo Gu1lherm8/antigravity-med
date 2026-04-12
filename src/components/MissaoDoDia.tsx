@@ -114,7 +114,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-8    ">
       {/* Header com Preceptor */}
       <div className="relative overflow-hidden rounded-3xl border border-red-500/30 bg-red-500/5 p-6">
         <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-transparent to-transparent" />
@@ -143,7 +143,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
         </div>
         <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden mb-6">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all duration-700"
+            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all "
             style={{ width: `${progresso}%` }}
           />
         </div>
@@ -158,7 +158,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
         )}
 
         {progresso === 100 && (
-          <div className="mt-4 flex items-center gap-2 text-emerald-400 font-bold justify-center bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20 animate-in fade-in duration-500">
+          <div className="mt-4 flex items-center gap-2 text-emerald-400 font-bold justify-center bg-emerald-500/10 py-3 rounded-xl border border-emerald-500/20   ">
             <Trophy className="w-5 h-5" /> Dia completo! Missão cumprida. 🏆
           </div>
         )}
@@ -211,7 +211,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
                   {msDoPeriodo.sort((a, b) => a.order_index - b.order_index).map((mission, idx) => (
                     <div
                       key={mission.id}
-                      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all animate-in fade-in slide-in-from-left-4 duration-300 ${
+                      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all     ${
                         mission.completed
                           ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
                           : activeMission === mission.id

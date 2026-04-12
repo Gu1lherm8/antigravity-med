@@ -242,7 +242,7 @@ export function CalendarioSemanal() {
   });
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6   ">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-white">🗓️ Calendário Semanal</h2>
@@ -299,7 +299,7 @@ export function CalendarioSemanal() {
                   <button
                     key={entry.id}
                     onClick={() => setSelected(entry)}
-                    className={`w-full text-left rounded-lg px-2 py-1.5 transition-all hover:brightness-110 animate-in fade-in zoom-in-95 duration-200 ${
+                    className={`w-full text-left rounded-lg px-2 py-1.5 transition-all hover:brightness-110     ${
                       entry.status === 'concluido' ? 'opacity-50' : ''
                     }`}
                     style={{ backgroundColor: entry.color + '25', borderLeft: `3px solid ${entry.color}` }}
@@ -342,8 +342,8 @@ export function CalendarioSemanal() {
       </div>
 
       {selected && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelected(null)}>
-          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-md animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4   " onClick={() => setSelected(null)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-md    ">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center text-xl" style={{ backgroundColor: selected.color + '30' }}>
@@ -368,8 +368,8 @@ export function CalendarioSemanal() {
       )}
 
       {modal !== null && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-lg animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4   " onClick={() => setModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-6 w-full max-w-lg    ">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black text-white">{modal.id ? 'Editar Bloco' : `+ Novo Bloco — ${DIAS_FULL[modal.day_of_week]}`}</h3>
               <button onClick={() => setModal(null)} className="text-text-secondary hover:text-white"><X className="w-5 h-5" /></button>
@@ -428,8 +428,8 @@ export function CalendarioSemanal() {
       )}
 
       {showSettings && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowSettings(false)}>
-          <div onClick={e => e.stopPropagation()} className="glass-card p-8 w-full max-w-md border-primary/30 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4   " onClick={() => setShowSettings(false)}>
+          <div onClick={e => e.stopPropagation()} className="glass-card p-8 w-full max-w-md border-primary/30    ">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Settings className="w-6 h-6" /></div>
               <div>

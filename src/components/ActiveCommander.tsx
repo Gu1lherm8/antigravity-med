@@ -52,10 +52,10 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
   if (!plan) return null;
 
   return (
-    <div className="w-full flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="w-full flex flex-col gap-6   ">
       <div className="relative group">
         {/* GLOW DE FUNDO */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-indigo-500/50 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-indigo-500/50 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition  group-hover:"></div>
         
         <div className="relative glass-card p-0 rounded-[2.5rem] overflow-hidden border-white/10 bg-black/40 backdrop-blur-3xl shadow-2xl">
           <div className="flex flex-col lg:flex-row divide-white/5 lg:divide-x">
@@ -123,7 +123,7 @@ export function ActiveCommander({ onStartPilot }: ActiveCommanderProps) {
                 {plan.tasks.slice(0, 4).map((task, idx) => (
                   <div 
                     key={task.id}
-                    className={`flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all animate-in fade-in slide-in-from-right-4 duration-300`}
+                    className={`flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all    `}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${

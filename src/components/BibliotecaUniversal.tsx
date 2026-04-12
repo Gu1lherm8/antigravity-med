@@ -64,7 +64,7 @@ function MarkdownRenderer({ content }: { content: string }) {
   return (
     <div 
       id="resumo"
-      className="container-resumo academic-text animate-in fade-in duration-500"
+      className="container-resumo academic-text   "
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -262,7 +262,7 @@ export function BibliotecaUniversal() {
 
       {/* VISÃO LISTA DE RESUMOS */}
       {!loading && activeMode === 'teoria' && !selectedNote && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6    ">
            {notes.map(note => {
              const subjectInfo = (note.topics?.subjects as any) || { name: 'Geral', color: '#6366f1' };
              return (
@@ -300,7 +300,7 @@ export function BibliotecaUniversal() {
 
       {/* VISÃO DETALHE DO RESUMO (CONCEITO FERRETTO) */}
       {!loading && activeMode === 'teoria' && selectedNote && (
-        <div className="flex flex-col lg:flex-row gap-8 animate-in slide-in-from-bottom-8 duration-700 pb-20">
+        <div className="flex flex-col lg:flex-row gap-8    pb-20">
           
           {/* Sidebar de Tópicos (Estilo Ferretto) */}
           <aside className="lg:w-80 flex flex-col gap-6 no-print">
@@ -382,7 +382,7 @@ export function BibliotecaUniversal() {
 
       {/* VISÃO ANKI (Cognição Ativa) */}
       {!loading && activeMode === 'flashcards' && (
-        <div className="flex flex-col items-center justify-center py-2 animate-in fade-in duration-700">
+        <div className="flex flex-col items-center justify-center py-2   ">
            {deck.length === 0 ? (
              <div className="glass-card p-24 flex flex-col items-center gap-6 text-center border-dashed border-white/10">
                 <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center border-4 border-emerald-500/10">
@@ -401,11 +401,11 @@ export function BibliotecaUniversal() {
                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em]">Review de Hoje</span>
                    <strong className="text-white text-3xl">{currentCardIndex + 1} <span className="text-white/10">/</span> {deck.length}</strong>
                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3 border border-white/5">
-                      <div className="h-full bg-gradient-to-r from-orange-500 to-amber-300 transition-all duration-700" style={{ width: `${((currentCardIndex + 1) / deck.length) * 100}%` }}></div>
+                      <div className="h-full bg-gradient-to-r from-orange-500 to-amber-300 transition-all " style={{ width: `${((currentCardIndex + 1) / deck.length) * 100}%` }}></div>
                    </div>
                 </div>
 
-                <div className={`glass-card relative min-h-[420px] flex flex-col w-full transition-all duration-500 border-2 ${showAnswer ? 'border-amber-500/30' : 'border-white/5'} overflow-hidden shadow-2xl shadow-orange-500/5`}>
+                <div className={`glass-card relative min-h-[420px] flex flex-col w-full transition-all  border-2 ${showAnswer ? 'border-amber-500/30' : 'border-white/5'} overflow-hidden shadow-2xl shadow-orange-500/5`}>
                    <div className="p-10 md:p-14 flex-1 flex flex-col">
                       <div className="flex items-center gap-2 mb-8">
                         <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -419,7 +419,7 @@ export function BibliotecaUniversal() {
                    </div>
 
                    {showAnswer && (
-                     <div className="p-10 md:p-14 bg-amber-500/5 border-t border-amber-500/10 animate-in slide-in-from-bottom-12 duration-500">
+                     <div className="p-10 md:p-14 bg-amber-500/5 border-t border-amber-500/10   ">
                         <div className="px-3 py-1 bg-amber-500/20 rounded-full border border-amber-500/30 inline-flex items-center gap-2 mb-6">
                           <RotateCw className="w-3 h-3 text-amber-500"/> 
                           <span className="text-[8px] font-black text-amber-500 uppercase">Explicação Consolidada</span>

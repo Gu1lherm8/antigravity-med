@@ -53,7 +53,7 @@ export function Auth() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#0EA5E9]/20 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" />
 
-      <div className="w-full max-w-md z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-md z-10    ">
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-[#0EA5E9] mx-auto rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0EA5E9]/40 mb-6 group transition-transform hover:scale-110">
             <Zap className="w-10 h-10 text-white fill-white" />
@@ -114,13 +114,13 @@ export function Auth() {
             </div>
 
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-xl flex items-center gap-3 animate-in zoom-in-95 duration-200">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-xl flex items-center gap-3   ">
                 <ShieldCheck className="w-4 h-4" />
                 {error}
               </div>
             )}
             {message && (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-3 animate-in zoom-in-95 duration-200">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-3   ">
                 <ShieldCheck className="w-4 h-4" />
                 {message}
               </div>
@@ -131,7 +131,7 @@ export function Auth() {
               disabled={loading}
               className="w-full bg-[#0EA5E9] hover:brightness-110 text-white py-5 text-sm uppercase tracking-[0.2em] font-black rounded-2xl group shadow-xl shadow-[#0EA5E9]/20 relative overflow-hidden transition-all active:scale-95 disabled:opacity-50"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform " />
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
