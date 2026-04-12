@@ -1,15 +1,15 @@
 // ============================================================
-// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO COMPATIBILIDADE UNIVERSAL)
+// 🧠 GEMINI CLIENT — Antigravity Med V4 (MODO FINAL ESTÁVEL)
 // Cliente serverless para Google Gemini com Fallback e Prompt Fusion
 // ============================================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-// Modelos estáveis para o canal v1 (Produção)
+// Modelos estáveis para o canal v1beta (Necessário para Gemini 2.0 Flash em contas pagas)
 const MODELS_FALLBACK = [
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-latest', 
-  'gemini-1.5-pro'
+  'gemini-2.0-flash',        // O modelo que apareceu no seu gráfico do AI Studio
+  'gemini-1.5-flash',        // Backup estável
+  'gemini-1.5-flash-latest'  // Backup de redundância
 ];
 
 export interface GeminiResponse {
@@ -45,13 +45,11 @@ export async function callGemini(
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 8192,
-            // Nota: Em v1 estável, removemos responseMimeType e systemInstruction do body 
-            // se estiver dando erro 400, confiando no prompt fusion e no safeParser.
           },
         };
 
-        // URL estável v1
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
+        // URL v1beta — O canal onde o Gemini 2.0 opera com todos os recursos
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
         
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 50000);
@@ -66,7 +64,7 @@ export async function callGemini(
         clearTimeout(timeout);
 
         if (response.status === 404 || response.status === 403) {
-          lastError = new Error(`Modelo ${modelId} não encontrado/bloqueado.`);
+          lastError = new Error(`Modelo ${modelId} não encontrado (404/403). Tentando backup...`);
           break; 
         }
 
@@ -78,7 +76,7 @@ export async function callGemini(
         const data = await response.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-        if (!text) throw new Error('Resposta vazia');
+        if (!text) throw new Error('Resposta vazia da IA');
 
         if (expectJSON) {
           const parsed = safeParseJSON(text);
@@ -97,7 +95,7 @@ export async function callGemini(
     }
   }
 
-  throw new Error(`O Triturador falhou. Motivo: ${lastError?.message}`);
+  throw new Error(`O Triturador falhou em todos os caminhos. Motivo: ${lastError?.message}`);
 }
 
 function safeParseJSON(text: string): any | null {
