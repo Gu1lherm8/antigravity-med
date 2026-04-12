@@ -180,12 +180,10 @@ export default function App() {
 
         <div className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8">
 
-          <AnimatePresence mode="wait">
-
-            {/* ===== DASHBOARD ===== */}
+          {/* Tab content — sem AnimatePresence para evitar crash insertBefore do Framer Motion */}
+          <div className="animate-in fade-in duration-200">
             {activeTab === 'dashboard' && (
-              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex flex-col gap-8">
-
+              <div className="flex flex-col gap-8">
                 <header className="flex justify-between items-start">
                   <div>
                     <h2 className="text-4xl font-black tracking-tighter text-white">Status do Futuro Médico</h2>
@@ -196,7 +194,6 @@ export default function App() {
                   </button>
                 </header>
 
-                {/* PILOTO AUTOMÁTICO */}
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
@@ -205,7 +202,6 @@ export default function App() {
                   <ActiveCommander onStartPilot={handleStartPilot} />
                 </section>
 
-                {/* WIDGET REDAÇÃO: Validador C5 ENEM 2025 */}
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-3 h-3 text-indigo-400" />
@@ -214,7 +210,6 @@ export default function App() {
                   <C5Checklist />
                 </section>
 
-                {/* 4 CARDS DE MÉTRICAS */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label: 'STATUS', value: 'BOM', sub: 'ESTÁVEL', color: 'text-emerald-400', icon: '🟢' },
@@ -232,8 +227,7 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'painel'       && <PainelGlobal />}
@@ -247,8 +241,7 @@ export default function App() {
             {activeTab === 'triagem'      && <TriDashboard />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
-
-          </AnimatePresence>
+          </div>
 
           {flowQueue && flowPeriod && (
             <FlowEngine
