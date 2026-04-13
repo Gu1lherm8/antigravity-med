@@ -5,6 +5,7 @@ import {
   Settings, AlertTriangle, TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { cerebroEngine } from '../services/cerebroService';
 
 interface UserPreferences {
   hours_per_day: number;
@@ -165,74 +166,32 @@ export function CalendarioSemanal() {
 
   async function gerarSemanaV2() {
     setLoading(true);
-    const [{ data: subjects }, { data: sessions }] = await Promise.all([
-      supabase.from('subjects').select('*, topics(*)'),
-      supabase.from('study_sessions').select('*')
-    ]);
+    try {
+      // 1. Limpa a semana atual para evitar duplicidade
+      await supabase.from('weekly_schedule').delete().eq('week_start', weekStart);
 
-    if (!subjects || subjects.length === 0) {
-      alert('Cadastre algumas matérias no Cockpit primeiro!');
-      setLoading(false);
-      return;
-    }
+      // 2. Gera o plano pelo Cérebro Central (Elite Engine)
+      const weekEntries = await cerebroEngine.generateWeeklyPlan(weekStart);
 
-    const weightedSubjects = subjects.map(sub => {
-      const subSessions = sessions?.filter(s => s.subject_id === sub.id) || [];
-      const avgAccuracy = subSessions.length > 0 
-        ? subSessions.reduce((acc, s) => acc + (s.correct_answers/s.total_questions), 0) / subSessions.length
-        : 0.7;
+      if (!weekEntries || weekEntries.length === 0) {
+        alert('Cérebro: Não consegui gerar planos. Verifique suas metas e matérias!');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Persiste no banco
+      const { error } = await supabase.from('weekly_schedule').insert(weekEntries);
       
-      const errorRate = 1 - avgAccuracy;
-      const enemWeight = sub.topics?.reduce((acc: number, t: any) => acc + (t.enem_weight || 1), 0) / (sub.topics?.length || 1);
-      const weight = (enemWeight * 2) + (errorRate * 15) + (prefs.intensity === 'Hardcore' ? 5 : 2);
-      return { ...sub, weight };
-    }).sort((a, b) => b.weight - a.weight);
+      if (error) throw error;
 
-    const newEntries: any[] = [];
-    const startHour = 8;
-    const daysToGenerate = prefs.days_per_week;
-
-    for (let d = 1; d <= daysToGenerate; d++) {
-      let currentHour = startHour;
-      const subjectsForDay = weightedSubjects.slice(0, Math.min(weightedSubjects.length, 3));
-
-      subjectsForDay.forEach((sub, idx) => {
-        if (currentHour >= startHour + prefs.hours_per_day) return;
-        const color = sub.color || CORES[idx % CORES.length];
-        newEntries.push({
-          week_start: weekStart,
-          day_of_week: d,
-          activity_type: 'aula',
-          title: `📡 Aula: ${sub.name}`,
-          subject_name: sub.name,
-          duration_minutes: 60,
-          start_time: `${String(currentHour).padStart(2, '0')}:00`,
-          color,
-          status: 'pendente'
-        });
-        currentHour += 1.5;
-
-        if (currentHour < startHour + prefs.hours_per_day) {
-          newEntries.push({
-            week_start: weekStart,
-            day_of_week: d,
-            activity_type: 'questoes',
-            title: `🎯 Prática: ${sub.name}`,
-            subject_name: sub.name,
-            duration_minutes: 45,
-            start_time: `${String(Math.floor(currentHour)).padStart(2, '0')}:${currentHour % 1 === 0 ? '00' : '30'}`,
-            color: '#10b981',
-            status: 'pendente'
-          });
-          currentHour += 1;
-        }
-      });
-      weightedSubjects.push(weightedSubjects.shift()!); 
+      await loadEntries();
+      alert('🚀 Cronograma de Elite Gerado com Sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao gerar cronograma: ' + err.message);
+    } finally {
+      setLoading(false);
     }
-
-    await supabase.from('weekly_schedule').insert(newEntries);
-    await loadEntries();
-    setLoading(false);
   }
 
   const semana = Array.from({ length: 7 }, (_, i) => {

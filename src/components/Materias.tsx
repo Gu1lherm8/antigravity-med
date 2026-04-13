@@ -4,7 +4,17 @@ import {
   Star, ArrowLeft, Save, X, CheckCircle2, AlertCircle, Layers,
   Calendar, Clock, Target
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { supabase } from '../lib/supabase';
+
+// Helper para renderizar icone antigo do postgrest ou emojis novos
+function renderIcon(iconName: string) {
+  if (!iconName) return '📚';
+  if (iconName.length <= 4) return iconName; // Emoji
+  const IconComponent = (LucideIcons as any)[iconName];
+  if (IconComponent) return <IconComponent className="w-8 h-8" />;
+  return '📚';
+}
 
 // ─── Tipos ─────────────────────────────────────────────────────
 interface Subject {
@@ -22,6 +32,7 @@ interface Topic {
   name: string;
   enem_relevance: number;
   notes: string;
+  front?: 'A' | 'B' | 'C' | null;
   // Dashboard Metrics (based on spreadsheet logic)
   difficulty?: 'Fácil' | 'Médio' | 'Difícil';
   theory_status?: 'pendente' | 'concluida';
@@ -233,12 +244,13 @@ function TopicModal({
   const [name, setName] = useState(initial?.name ?? '');
   const [relevance, setRelevance] = useState(initial?.enem_relevance ?? 3);
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [front, setFront] = useState<'A' | 'B' | 'C' | ''>((initial?.front as any) ?? '');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!name.trim()) return;
     setSaving(true);
-    await onSave({ subject_id: subjectId, name: name.trim(), enem_relevance: relevance, notes: notes.trim() });
+    await onSave({ subject_id: subjectId, name: name.trim(), enem_relevance: relevance, notes: notes.trim(), front: front ? front as 'A'|'B'|'C' : null });
     setSaving(false);
   }
 
@@ -252,6 +264,21 @@ function TopicModal({
         <div className="flex flex-col gap-2">
           <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Nome do Assunto</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Genética, Termodinâmica..." className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-primary/50 transition-all" autoFocus />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Frente de Estudo (Opcional)</label>
+          <div className="flex gap-2">
+            {['A', 'B', 'C'].map(f => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFront(front === f ? '' : f as any)}
+                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all ${front === f ? 'bg-primary text-white' : 'bg-white/5 text-text-secondary hover:bg-white/10'}`}
+              >
+                Frente {f}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Relevância no ENEM</label>
@@ -344,6 +371,7 @@ function SessionModal({
   const [correct,    setCorrect]    = useState(0);
   const [difficulty, setDifficulty] = useState<'Fácil' | 'Médio' | 'Difícil'>('Médio');
   const [date,       setDate]       = useState(new Date().toISOString().split('T')[0]);
+  const [notes,      setNotes]      = useState('');
   const [saving,     setSaving]     = useState(false);
 
   async function handleSave() {
@@ -356,6 +384,7 @@ function SessionModal({
       total_questions: total,
       correct_answers: correct,
       difficulty,
+      notes: notes.trim(),
       completed_at: new Date(date).toISOString(),
       next_revision_date: calculateNextRevision(date)
     });
@@ -380,16 +409,29 @@ function SessionModal({
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white" />
         </div>
 
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+            {type === 'aula' ? 'Qual Aula?' : 'Qual Lista/Material?'}
+          </label>
+          <input 
+            type="text" 
+            value={notes} 
+            onChange={e => setNotes(e.target.value)} 
+            placeholder={type === 'aula' ? 'Ex: Aula 01 - Introdução' : 'Ex: Lista do Ferreto, Apostila Hexag...'}
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder:text-text-secondary/40" 
+          />
+        </div>
+
         {type !== 'aula' && (
           <>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Acertos</label>
-                <input type="number" value={total} onChange={e => setTotal(parseInt(e.target.value) || 0)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white text-center" />
+                <input type="number" value={correct} onChange={e => setCorrect(parseInt(e.target.value) || 0)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white text-center" />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Total</label>
-                <input type="number" value={correct} onChange={e => setCorrect(parseInt(e.target.value) || 0)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white text-center" />
+                <input type="number" value={total} onChange={e => setTotal(parseInt(e.target.value) || 0)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white text-center" />
               </div>
             </div>
             <div className="flex flex-col gap-2">
@@ -546,13 +588,17 @@ export function Materias() {
   async function saveTopic(data: Omit<Topic, 'id'>) {
     if (editTopic?.id) {
       const { error } = await supabase.from('topics').update({
-        name: data.name, enem_relevance: data.enem_relevance, notes: data.notes
+        name: data.name, enem_relevance: data.enem_relevance, notes: data.notes, front: data.front
       }).eq('id', editTopic.id);
       if (error) { showToast('Erro ao salvar', 'err'); return; }
       showToast('Tópico atualizado!');
     } else {
       const { error } = await supabase.from('topics').insert(data);
-      if (error) { showToast('Tópico já existe ou erro ao criar', 'err'); return; }
+      if (error) { 
+        console.error(error);
+        showToast('Tópico já existe ou erro ao criar', 'err'); 
+        return; 
+      }
       showToast('Tópico adicionado!');
     }
     setShowTopicModal(false);
@@ -705,13 +751,22 @@ export function Materias() {
                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.session_type === 'aula' ? 'bg-amber-500/20 text-amber-500' : 'bg-primary/20 text-primary'}`}>
                        {s.session_type === 'aula' ? <BookOpen className="w-5 h-5" /> : <Target className="w-5 h-5" />}
                      </div>
-                     <div className="flex-1">
-                       <div className="flex items-center gap-2">
-                         <span className="text-xs font-black text-white">{s.session_type === 'aula' ? 'Aula Assistida' : 'Rodada de Exercícios'}</span>
-                         <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${s.difficulty === 'Fácil' ? 'bg-emerald-500/20 text-emerald-400' : s.difficulty === 'Médio' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
-                           {s.difficulty}
-                         </span>
-                       </div>
+                      <div className="flex-1">
+                        <div className="flex flex-col gap-0.5">
+                           <div className="flex items-center gap-2">
+                             <span className="text-xs font-black text-white">
+                                {s.session_type === 'aula' ? 'Aula Assistida' : 'Rodada de Exercícios'}
+                             </span>
+                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${s.difficulty === 'Fácil' ? 'bg-emerald-500/20 text-emerald-400' : s.difficulty === 'Médio' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                               {s.difficulty}
+                             </span>
+                           </div>
+                           {(s as any).notes && (
+                             <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider block mt-0.5">
+                               ↳ {(s as any).notes}
+                             </span>
+                           )}
+                        </div>
                        <div className="flex items-center gap-4 mt-1">
                          <span className="text-[10px] text-text-secondary font-bold inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(s.completed_at).toLocaleDateString()}</span>
                          {s.session_type !== 'aula' && (
@@ -836,7 +891,7 @@ export function Materias() {
             className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
             style={{ backgroundColor: activeSubject.color + '33' }}
           >
-            {activeSubject.icon}
+            {renderIcon(activeSubject.icon)}
           </div>
           <div>
             <h2 className="text-3xl font-black tracking-tighter">{activeSubject.name}</h2>
@@ -886,7 +941,14 @@ export function Materias() {
 
                 {/* Nome e notas */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-text-primary">{topic.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-black text-text-primary">{topic.name}</p>
+                    {topic.front && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Frente {topic.front}
+                      </span>
+                    )}
+                  </div>
                   {topic.notes && (
                     <p className="text-xs text-text-secondary mt-0.5 truncate">{topic.notes}</p>
                   )}
@@ -1039,7 +1101,7 @@ export function Materias() {
                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
                     style={{ backgroundColor: subject.color + '33' }}
                   >
-                    {subject.icon}
+                    {renderIcon(subject.icon)}
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button

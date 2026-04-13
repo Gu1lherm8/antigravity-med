@@ -14,22 +14,22 @@ interface TriHistory {
 
 export function TriDashboard() {
   const [historyData, setHistoryData] = useState<TriHistory[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [activeSubject, setActiveSubject] = useState('');
+  const [radarData, setRadarData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubject, setActiveSubject] = useState('Matemática'); // Padrão
-  
-  // Radar data state
-  const mockRadarData = [
-    { skill: 'Funções', level: 85, ideal: 100 },
-    { skill: 'Geometria', level: 60, ideal: 100 },
-    { skill: 'Financeira', level: 90, ideal: 100 },
-    { skill: 'Estatística', level: 45, ideal: 100 },
-    { skill: 'Probabilidade', level: 70, ideal: 100 },
-  ];
 
   useEffect(() => {
-    async function loadData() {
+    async function loadInitialData() {
       setLoading(true);
-      // Carrega todo o histórico mocado do banco temporal que criamos
+      // 1. Carrega as matérias originais
+      const { data: subsData } = await supabase.from('subjects').select('*').order('name');
+      if (subsData && subsData.length > 0) {
+        setSubjects(subsData);
+        setActiveSubject(subsData[0].name);
+      }
+
+      // 2. Carrega histórico de theta global (Mantido provisoriamente)
       const { data } = await supabase
         .from('user_theta_history')
         .select('*')
@@ -38,8 +38,44 @@ export function TriDashboard() {
       if (data) setHistoryData(data);
       setLoading(false);
     }
-    loadData();
+    loadInitialData();
   }, []);
+
+  useEffect(() => {
+    async function reloadRadar() {
+      if (!activeSubject || subjects.length === 0) return;
+      
+      const sub = subjects.find(s => s.name === activeSubject);
+      if (!sub) return;
+
+      const { data: sessions } = await supabase
+        .from('study_sessions')
+        .select('*, topics(name)')
+        .eq('subject_id', sub.id)
+        .in('session_type', ['questoes', 'global']);
+
+      if (sessions && sessions.length > 0) {
+        const grouped: any = {};
+        sessions.forEach(s => {
+          if (!s.topic_id) return;
+          const tName = s.topics?.name || 'Desconhecido';
+          if (!grouped[tName]) grouped[tName] = { total: 0, correct: 0 };
+          grouped[tName].total += (s.total_questions || 0);
+          grouped[tName].correct += (s.correct_answers || 0);
+        });
+
+        const newRadar = Object.keys(grouped).map(name => {
+          const acc = grouped[name].total > 0 ? Math.round((grouped[name].correct / grouped[name].total) * 100) : 0;
+          return { skill: name.length > 15 ? name.substring(0, 15) + '...' : name, level: acc, ideal: 100, originalName: name };
+        });
+
+        setRadarData(newRadar.length > 0 ? newRadar : [{ skill: 'Sem Dados', level: 0, ideal: 100 }]);
+      } else {
+        setRadarData([{ skill: 'Sem Dados', level: 0, ideal: 100 }]);
+      }
+    }
+    reloadRadar();
+  }, [activeSubject, subjects]);
 
   // Filtra curva pro gráfico de linhas
   const curveData = historyData
@@ -72,18 +108,18 @@ export function TriDashboard() {
         </div>
 
         {/* MUDAR MATÉRIA (Abas Rápidas) */}
-        <div className="flex bg-white/5 p-1 rounded-xl">
-          {['Matemática', 'Biologia'].map(sub => (
+        <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto max-w-xl custom-scrollbar">
+          {subjects.map(sub => (
             <button 
-              key={sub}
-              onClick={() => setActiveSubject(sub)}
-              className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${
-                activeSubject === sub 
+              key={sub.id}
+              onClick={() => setActiveSubject(sub.name)}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all whitespace-nowrap ${
+                activeSubject === sub.name 
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
                   : 'text-text-secondary hover:text-white hover:bg-white/5'
               }`}
             >
-              {sub}
+              {sub.name}
             </button>
           ))}
         </div>
@@ -183,14 +219,15 @@ export function TriDashboard() {
           
           <div className="h-64 w-full relative">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={mockRadarData}>
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                   <PolarGrid stroke="#ffffff20" />
-                  <PolarAngleAxis dataKey="skill" stroke="#ffffff60" fontSize={11} fontWeight="bold" />
+                  <PolarAngleAxis dataKey="skill" stroke="#ffffff60" fontSize={10} fontWeight="bold" />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar name="Você" dataKey="level" stroke="#6366f1" fill="#6366f1" fillOpacity={0.5} />
                   <Radar name="Meta ENEM" dataKey="ideal" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeDasharray="5 5" />
                   <Tooltip 
                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }}
+                     formatter={(value, name, props) => [`${value}%`, name === 'Você' ? (props.payload.originalName || props.payload.skill) : 'Meta Ideal']}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -204,21 +241,29 @@ export function TriDashboard() {
       </div>
 
       {/* HEATMAP GRID ALERTA (Dica de Receituário Integrado) */}
-      <div className="glass-card border border-primary/20 bg-primary/5 p-6 rounded-3xl mt-2 flex flex-col sm:flex-row items-center gap-6">
-         <div className="p-4 bg-primary/20 rounded-2xl">
-           <Zap className="w-8 h-8 text-primary" />
-         </div>
-         <div className="flex-1">
-           <h3 className="font-black text-xl mb-1 text-white">Anomalia Encontrada pelo DecisionEngine</h3>
-           <p className="text-sm text-text-secondary leading-relaxed">
-             No último simulado, o sistema detectou falha alta ({'<'} 40%) no bloco de <strong className="text-white">Geometria</strong> 
-             em itens Fáceis. A coerência caiu de 85% para 70%. Isso derruba sua nota TRI severamente!
-           </p>
-         </div>
-         <button className="btn-primary whitespace-nowrap py-3 px-8 shadow-[0_0_20px_rgba(var(--primary),0.4)]">
-           Gerar Receita Reparadora
-         </button>
-      </div>
+      {radarData.length > 0 && radarData[0].skill !== 'Sem Dados' && (() => {
+        const worstTopic = [...radarData].sort((a, b) => a.level - b.level)[0];
+        if (worstTopic.level < 50) {
+          return (
+            <div className="glass-card border border-primary/20 bg-primary/5 p-6 rounded-3xl mt-2 flex flex-col sm:flex-row items-center gap-6">
+               <div className="p-4 bg-primary/20 rounded-2xl">
+                 <Zap className="w-8 h-8 text-primary" />
+               </div>
+               <div className="flex-1">
+                 <h3 className="font-black text-xl mb-1 text-white">Anomalia Encontrada pelo Cérebro</h3>
+                 <p className="text-sm text-text-secondary leading-relaxed">
+                   No histórico recente, o sistema detectou falha crítica ({worstTopic.level}%) no bloco de <strong className="text-white uppercase tracking-widest">{worstTopic.originalName || worstTopic.skill}</strong>. 
+                   Sua coerência e dominância da matéria de {activeSubject} está travada por conta desse ponto cego.
+                 </p>
+               </div>
+               <button className="btn-primary whitespace-nowrap py-3 px-8 shadow-[0_0_20px_rgba(var(--primary),0.4)]">
+                 Gerar Receita Reparadora
+               </button>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
     </div>
   );

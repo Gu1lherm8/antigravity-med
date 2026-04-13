@@ -26,8 +26,24 @@ interface GlobalStats {
 export function PainelGlobal() {
   const [stats, setStats] = useState<GlobalStats[]>([]);
   const [revisions, setRevisions] = useState<any[]>([]);
+  const [dailyPlan, setDailyPlan] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'critical' | 'natureza' | 'humanas'>('all');
+  const [filter, setFilter] = useState<string>('all');
+
+  const AREA_MAP: Record<string, string> = {
+    'Biologia': 'natureza',
+    'Química': 'natureza',
+    'Física': 'natureza',
+    'História': 'humanas',
+    'Geografia': 'humanas',
+    'Filosofia': 'humanas',
+    'Sociologia': 'humanas',
+    'Português': 'linguagens',
+    'Literatura': 'linguagens',
+    'Inglês': 'linguagens',
+    'Espanhol': 'linguagens',
+    'Matemática': 'matematica'
+  };
 
   useEffect(() => {
     loadGlobalData();
@@ -79,6 +95,15 @@ export function PainelGlobal() {
       setStats(processedStats);
     }
 
+    // Carregar Cronograma Inteligente via Cérebro Central
+    try {
+      const { cerebroEngine } = await import('../services/cerebroService');
+      const plan = await cerebroEngine.generateDailyPlan();
+      setDailyPlan(plan);
+    } catch (e: any) {
+      console.error('Erro ao gerar plano:', e);
+    }
+
     setRevisions(revs || []);
     setLoading(false);
   }
@@ -91,14 +116,21 @@ export function PainelGlobal() {
           <h2 className="text-4xl font-black text-white tracking-tighter">Painel de Voo</h2>
           <p className="text-text-secondary mt-2">Visão panorâmica da sua performance e missões pendentes</p>
         </div>
-        <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
-          {['all', 'critical', 'natureza'].map(f => (
+        <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5 overflow-x-auto custom-scrollbar">
+          {[
+            { id: 'all', label: 'Tudo' },
+            { id: 'critical', label: 'Críticos' },
+            { id: 'natureza', label: 'Natureza' },
+            { id: 'humanas', label: 'Humanas' },
+            { id: 'linguagens', label: 'Linguagens' },
+            { id: 'matematica', label: 'Exatas' }
+          ].map(f => (
             <button 
-              key={f}
-              onClick={() => setFilter(f as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${filter === f ? 'bg-primary text-white' : 'text-text-secondary hover:text-white'}`}
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all whitespace-nowrap ${filter === f.id ? 'bg-primary text-white' : 'text-text-secondary hover:text-white'}`}
             >
-              {f === 'all' ? 'Tudo' : f === 'critical' ? 'Críticos' : 'Natureza'}
+              {f.label}
             </button>
           ))}
         </div>
@@ -115,7 +147,12 @@ export function PainelGlobal() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {stats.map((subject, idx) => (
+            {stats.filter(s => {
+              if (filter === 'all') return true;
+              if (filter === 'critical') return s.accuracy > 0 && s.accuracy < 60;
+              const area = AREA_MAP[s.subject_name] || 'outros';
+              return area === filter;
+            }).map((subject, idx) => (
               <div 
                 key={subject.subject_id}
                 className="glass-card p-6 flex flex-col gap-4 border-l-4    "
@@ -148,15 +185,35 @@ export function PainelGlobal() {
             ))}
           </div>
 
-          {/* Registro de Rodada Global */}
-          <button className="btn-primary mt-4 flex items-center justify-center gap-3 py-5 rounded-3xl border border-white/10 bg-gradient-to-r from-primary/20 to-purple-500/20 hover:brightness-125 transition-all">
-            <Target className="w-6 h-6" />
-            <div className="text-left">
-              <p className="text-sm font-black text-white">Nova Rodada Global</p>
-              <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest">Registrar simulado ou questões de matéria completa</p>
-            </div>
-            <ChevronRight className="w-5 h-5 ml-auto text-primary" />
-          </button>
+          {/* Radar de Missões do Cérebro */}
+          <div className="flex flex-col gap-3">
+            {dailyPlan.length === 0 ? (
+              <div className="glass-card p-10 flex flex-col items-center justify-center text-center gap-4 opacity-50">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                <p className="text-sm font-bold text-slate-300">Nenhuma Missão para Hoje</p>
+                <p className="text-xs text-slate-500">Parabéns, cronograma limpo!</p>
+              </div>
+            ) : (
+              dailyPlan.map((mission) => (
+                <div key={mission.id} className="glass-card p-4 flex gap-4 border-l-4 hover:border-white/10 transition-all border-indigo-500">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-500/10 text-indigo-400`}>
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between items-start">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{mission.subject_name}</p>
+                      <span className="text-[10px] font-bold bg-white/5 text-slate-400 px-2 py-0.5 rounded-full">{mission.duration_minutes}m</span>
+                    </div>
+                    <p className="font-bold text-white mt-0.5 truncate uppercase">{mission.reason}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase border border-white/10 px-1.5 py-0.5 rounded">Frente {mission.front}</span>
+                       <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{mission.type}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Lado Direito: Radar de Missões (Revisões) */}

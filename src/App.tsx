@@ -18,6 +18,8 @@ import {
   Flame,
   CheckCircle2,
   Upload,
+  GraduationCap,
+  ChevronRight
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
@@ -33,9 +35,17 @@ import { CalendarioSemanal } from './components/CalendarioSemanal';
 import { CadernoDeErros } from './components/CadernoDeErros';
 import { FlowEngine } from './components/FlowEngine';
 import { PainelGlobal } from './components/PainelGlobal';
+import { ConfigurarCerebro } from './components/ConfigurarCerebro';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
+
+// Imports Módulo ENEM
+import SubjectNav from './components/study/SubjectNav';
+import SummaryModule from './components/study/SummaryModule';
+import QuestionModule from './components/study/QuestionModule';
+import MaterialModule from './components/study/MaterialModule';
+import SimulationModule from './components/study/SimulationModule';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
@@ -48,8 +58,10 @@ const NAV_ITEMS = [
   { id: 'caderno',      label: 'Caderno de Bula',icon: BookText },
   { id: 'uti',          label: 'UTI',            icon: AlertTriangle },
   { id: 'triagem',      label: 'Triagem',        icon: Stethoscope },
+  { id: 'config',       label: 'Configurações',  icon: Target },
   { id: 'biblioteca',   label: 'Biblioteca',     icon: Library },
   { id: 'triturador',   label: 'Triturador IA',  icon: Upload },
+  { id: 'enem',         label: 'Módulos ENEM',   icon: GraduationCap },
 ];
 
 export default function App() {
@@ -59,6 +71,17 @@ export default function App() {
 
   const [flowQueue, setFlowQueue] = useState<FlowTask[] | null>(null);
   const [flowPeriod, setFlowPeriod] = useState<'manha' | 'tarde' | 'noite' | 'personalizado' | null>(null);
+
+  // States Módulo ENEM
+  const [enemModule, setEnemModule] = useState('dashboard');
+  const [enemSubjectId, setEnemSubjectId] = useState<string | undefined>();
+  const [enemFront, setEnemFront] = useState<string | undefined>();
+
+  const handleEnemNavigate = (mod: string, subjId?: string, front?: string) => {
+    setEnemModule(mod);
+    setEnemSubjectId(subjId);
+    setEnemFront(front);
+  };
 
   useEffect(() => {
     checkActiveFlow();
@@ -101,66 +124,72 @@ export default function App() {
       {/* =========================================================
           SIDEBAR — labels SEMPRE visíveis em desktop
           ========================================================= */}
-      <aside className="w-64 border-r border-white/5 p-5 flex flex-col gap-6 sticky top-0 h-screen bg-[#080910] z-50 overflow-y-auto overflow-x-hidden flex-shrink-0">
+      <aside className="w-64 border-r border-teal-500/10 p-6 flex flex-col gap-8 sticky top-0 h-screen bg-[#020308] z-50 overflow-y-auto shrink-0 shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
         
-        {/* LOGO */}
-        <div className="flex items-center gap-3 px-1 py-2">
-          <div className="w-10 h-10 bg-primary rounded-xl flex-shrink-0 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-            <Zap className="w-5 h-5 fill-white text-white" />
+        {/* LOGO - High Tech Version */}
+        <div className="flex flex-col gap-1 px-1">
+          <div className="flex items-center gap-3 group">
+            <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-[0_0_30px_rgba(20,184,166,0.4)] group-hover:scale-110 transition-transform duration-500">
+              <ShieldCheck className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-black tracking-tighter uppercase text-white leading-none">AG MEDICINA</h1>
+              <span className="text-[10px] text-teal-400 font-bold tracking-[.2em] uppercase mt-1">Surgical Unit</span>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-black tracking-tighter uppercase text-white leading-none">AG Medicina</h1>
-            <p className="text-[10px] text-text-secondary tracking-[0.15em] font-black uppercase">Unidade Elite</p>
-          </div>
+          <div className="h-px w-full bg-gradient-to-r from-teal-500/50 to-transparent mt-4" />
         </div>
 
-        {/* NAV */}
-        <nav className="flex flex-col gap-1">
+        {/* NAV - Refined Glassmorphism */}
+        <nav className="flex flex-col gap-2">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
-            const isTriturador = id === 'triturador';
             return (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-black transition-all text-left ${
+                className={`group flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all duration-300 text-left relative overflow-hidden ${
                   isActive
-                    ? isTriturador
-                      ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.25)]'
-                      : 'bg-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]'
-                    : 'text-text-secondary hover:bg-white/5 hover:text-white'
+                    ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive && 'animate-pulse'}`} />
-                <span className="whitespace-nowrap text-sm">{label}</span>
-                {isTriturador && !isActive && (
-                  <span className="ml-auto text-[9px] font-black bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded-full uppercase tracking-widest">IA</span>
+                {isActive && (
+                  <div className="absolute left-0 top-0 w-1 h-full bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.8)]" />
+                )}
+                <Icon className={`w-4 h-4 shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                <span className="text-sm tracking-tight">{label}</span>
+                {id === 'triturador' && !isActive && (
+                  <div className="ml-auto w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                 )}
               </button>
             );
           })}
         </nav>
 
-        {/* WIDGET RITMO DE ELITE */}
-        <div className="mt-auto pt-4 border-t border-white/5">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-orange-500/20 rounded-lg"><Flame className="w-3 h-3 text-orange-500" /></div>
-            <div>
-              <p className="text-[10px] font-black text-text-secondary uppercase">Ritmo de Elite</p>
-              <p className="text-xs font-black text-white">14 DIAS</p>
+        {/* METRICS WIDGET */}
+        <div className="mt-auto space-y-4 pt-6 border-t border-teal-500/10">
+          <div className="glass-card p-4 border-teal-500/10 bg-teal-500/5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 bg-orange-500/20 rounded-lg"><Flame className="w-3 h-3 text-orange-500" /></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ritmo de Voo</span>
+            </div>
+            <div className="flex justify-between items-end mb-2">
+              <span className="text-xl font-black text-white italic">14 Dias</span>
+              <span className="text-[10px] font-black text-teal-400">92% ESTÁVEL</span>
+            </div>
+            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden flex gap-0.5">
+              {[...Array(7)].map((_, i) => (
+                <div key={i} className={`h-full flex-1 ${i < 6 ? 'bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.5)]' : 'bg-white/10'}`} />
+              ))}
             </div>
           </div>
-          <div className="w-full h-1.5 bg-white/5 rounded-full flex gap-0.5 overflow-hidden">
-            {[1, 1, 1, 1, 1, 1, 0.5].map((w, i) => (
-              <div key={i} className={`h-full flex-1 ${w === 1 ? 'bg-indigo-500' : 'bg-primary'}`} />
-            ))}
-          </div>
-        </div>
 
-        <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-black text-red-500 hover:bg-red-500/10 transition-all">
-          <Lock className="w-4 h-4 flex-shrink-0" />
-          <span className="text-sm">Sair</span>
-        </button>
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-sm">
+            <Lock className="w-4 h-4" />
+            Sair do Sistema
+          </button>
+        </div>
       </aside>
 
       {/* =========================================================
@@ -168,13 +197,19 @@ export default function App() {
           ========================================================= */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
 
-        {/* TOP ALERT PRECEPTOR */}
-        <div className="bg-primary/10 border-b border-primary/20 px-8 py-2.5 flex items-center justify-between z-40 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="px-2 py-0.5 bg-primary text-[10px] font-black rounded text-white tracking-widest">🎖️ PRECEPTOR</span>
-            <p className="text-xs font-bold text-white/80">Execute. Agora. Você tem missões pendentes hoje.</p>
+        {/* TOP ALERT PRECEPTOR - Surgical Command Version */}
+        <div className="bg-gradient-to-r from-teal-500/20 via-transparent to-transparent border-b border-teal-500/10 px-8 py-3 flex items-center justify-between z-40 shrink-0 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1 bg-teal-500/10 border border-teal-500/30 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse shadow-[0_0_10px_rgba(20,184,166,1)]" />
+              <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">🎖️ PRECEPTOR ON-LINE</span>
+            </div>
+            <p className="text-xs font-bold text-slate-300 tracking-wide lowercase first-letter:uppercase">Faltam poucas missões para fechar seu dia de elite. <span className="text-teal-400">Mantenha o foco, futuro médico.</span></p>
           </div>
-          <button onClick={() => setActiveTab('missao')} className="text-xs font-black text-primary hover:underline transition-all">Ver Missões →</button>
+          <button onClick={() => setActiveTab('missao')} className="group flex items-center gap-2 text-[10px] font-black text-teal-400 hover:text-white transition-all uppercase tracking-widest">
+            <span>Ver Missões Críticas</span>
+            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
 
         <div className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8">
@@ -184,13 +219,14 @@ export default function App() {
           <div className="opacity-100">
             {activeTab === 'dashboard' && (
               <div className="flex flex-col gap-8">
-                <header className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-4xl font-black tracking-tighter text-white">Status do Futuro Médico</h2>
-                    <p className="text-primary font-bold text-sm mt-1">Consistência: <span className="text-white">14 dias</span></p>
+                <header className="flex justify-between items-end pb-4 border-b border-teal-500/5">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black text-teal-500 uppercase tracking-[0.3em]">Hospitais & Disciplinas</span>
+                    <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-white">Prontuário de Estudos</h2>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-text-secondary hover:text-white transition-all text-xs font-black uppercase">
-                    <Brain className="w-4 h-4 text-primary" /> Modo Guerrilha
+                  <button className="group flex items-center gap-2 px-5 py-2.5 bg-teal-500/10 border border-teal-500/30 rounded-2xl text-teal-400 hover:bg-teal-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest shadow-[0_0_20px_rgba(20,184,166,0.2)]">
+                    <Brain className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
+                    <span>Ativar Modo Cirúrgico</span>
                   </button>
                 </header>
 
@@ -210,20 +246,26 @@ export default function App() {
                   <C5Checklist />
                 </section>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { label: 'STATUS', value: 'BOM', sub: 'ESTÁVEL', color: 'text-emerald-400', icon: '🟢' },
-                    { label: 'TRI', value: '94%', sub: 'COERÊNCIA ALTA', color: 'text-white', icon: null },
-                    { label: 'NOTA', value: '790', sub: 'SIMULADO GLOBAL', color: 'text-white', icon: null },
-                    { label: 'CORTE', value: '812', sub: 'AMPLA - ESCS', color: 'text-white', icon: null },
+                    { label: 'STATUS CLINICO', value: 'ESTÁVEL', sub: 'RITMO DE ELITE', color: 'text-teal-400', icon: '🩺' },
+                    { label: 'TRI GLOBAL', value: '792', sub: 'COERÊNCIA: 94%', color: 'text-white', icon: '📊' },
+                    { label: 'META ESCS', value: '812', sub: 'FALTAM 20 PTS', color: 'text-white', icon: '🏁' },
+                    { label: 'PROBABILIDADE', value: '84%', sub: 'APROVAÇÃO ESTIMADA', color: 'text-teal-500', icon: '🧠' },
                   ].map((card, i) => (
-                    <div key={i} className="glass-card p-6 bg-white/[0.02] border-white/5 flex flex-col gap-2">
-                      <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{card.label}</span>
-                      <div className="flex items-center gap-2">
-                        {card.icon && <span className="text-xs">{card.icon}</span>}
-                        <span className={`text-3xl font-black ${card.color}`}>{card.value}</span>
+                    <div key={i} className="glass-card p-6 bg-gradient-to-br from-white/[0.03] to-transparent border-teal-500/10 flex flex-col gap-3 group hover:border-teal-500/30 transition-all duration-500 relative overflow-hidden">
+                      <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity text-5xl grayscale">{card.icon}</div>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{card.label}</span>
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-3xl font-black tracking-tighter ${card.color}`}>{card.value}</span>
+                        {card.value.length < 5 && <span className="text-xs font-bold text-slate-400">PTS</span>}
                       </div>
-                      <span className="text-[10px] font-bold text-text-secondary/40 uppercase tracking-widest">{card.sub}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className={`h-full bg-teal-500 transition-all duration-1000 w-[70%] shadow-[0_0_10px_rgba(20,184,166,0.3)]`} />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-600 uppercase whitespace-nowrap">{card.sub}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -239,8 +281,104 @@ export default function App() {
             {activeTab === 'caderno'      && <CadernoDeErros />}
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
+            {activeTab === 'config'       && <ConfigurarCerebro />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
+
+            {activeTab === 'enem' && (
+              <div className="flex bg-[#080910] border border-white/5 rounded-2xl overflow-hidden min-h-[800px] h-full shadow-2xl">
+                <aside className="w-64 border-r border-white/5 bg-[#080910] overflow-y-auto shrink-0 z-10">
+                  <SubjectNav
+                    onNavigate={handleEnemNavigate}
+                    activeModule={enemModule}
+                    activeSubjectId={enemSubjectId}
+                  />
+                </aside>
+                <main className="flex-1 overflow-y-auto relative bg-[#05060A]">
+                  {enemModule === 'dashboard' && (
+                    <div className="p-8 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {/* Banner Hero */}
+                      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/40 via-blue-900/10 to-transparent border border-indigo-500/20 p-8 shadow-2xl">
+                        <div className="absolute right-0 bottom-0 p-8 opacity-10 pointer-events-none transform translate-x-10 translate-y-10 group-hover:scale-110 transition-transform duration-700">
+                          <GraduationCap className="w-64 h-64" />
+                        </div>
+                        <div className="relative z-10 flex flex-col gap-4 max-w-2xl">
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                              Quartel General
+                            </span>
+                          </div>
+                          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-white">
+                            Base de Estudos ENEM
+                          </h2>
+                          <p className="text-text-secondary text-sm md:text-base font-bold leading-relaxed">
+                            Navegue pelo menu lateral para acessar a Teoria, resolver listas por Frente e treinar reconhecimento de padrões por assunto. O motor reage ao que você explorar aqui.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        
+                        {/* Card 1 */}
+                        <div className="glass-card group cursor-default hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
+                          <div className="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500" />
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-300">
+                            <BookOpen className="w-7 h-7" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black text-white group-hover:text-indigo-400 transition-colors">Cadernos de Teoria</h3>
+                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
+                              Acesse resumos dinâmicos, teoria base e esquemas direcionados para cada área.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Card 2 */}
+                        <div className="glass-card group cursor-default hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
+                           <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500" />
+                          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-300">
+                            <Target className="w-7 h-7" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">Mapeamento Tático</h3>
+                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
+                              Estude por Frentes (A, B, C) e rastreie seu avanço em cada assunto isolado.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Card 3 */}
+                        <div className="glass-card group cursor-default hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
+                           <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-500" />
+                          <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 group-hover:scale-110 group-hover:bg-orange-500/20 transition-all duration-300">
+                            <Flame className="w-7 h-7" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">Forja de Erros</h3>
+                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
+                              Use simulados gerados automaticamente em cima das métricas de desempenho ruins.
+                            </p>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )}
+                  {enemModule === 'summaries' && <SummaryModule initialSubjectId={enemSubjectId} />}
+                  {enemModule === 'questions' && <QuestionModule initialSubjectId={enemSubjectId} />}
+                  {enemModule === 'materials' && <MaterialModule initialSubjectId={enemSubjectId} />}
+                  {enemModule === 'simulations' && <SimulationModule />}
+                  {enemModule === 'front' && (
+                    <div className="p-8">
+                      <h2 className="text-2xl font-black tracking-tight text-white mb-2">Visão Específica — Frente {enemFront}</h2>
+                      <p className="text-sm text-slate-400">Acesse exclusivamente o conteúdo tático desta frente para manter a progressão cruzada de matérias.</p>
+                    </div>
+                  )}
+                </main>
+              </div>
+            )}
           </div>
 
           {flowQueue && flowPeriod && (

@@ -14,8 +14,8 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  ChevronUp,
   Sparkles,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 import * as pdfjsLib from 'pdfjs-dist';
