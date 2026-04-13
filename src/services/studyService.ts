@@ -235,7 +235,8 @@ export const questionService = {
 
   // Upload de imagem para Supabase Storage
   async uploadImage(file: File): Promise<string> {
-    const fileName = `questions/${Date.now()}-${file.name}`
+    const safeName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9.-]/g, "_")
+    const fileName = `questions/${Date.now()}-${safeName}`
     const { error } = await supabase.storage
       .from('study-assets')
       .upload(fileName, file)
@@ -297,7 +298,8 @@ export const materialService = {
   },
 
   async uploadFile(file: File, folder: string = 'materials'): Promise<string> {
-    const fileName = `${folder}/${Date.now()}-${file.name}`
+    const safeName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9.-]/g, "_")
+    const fileName = `${folder}/${Date.now()}-${safeName}`
     const { error } = await supabase.storage
       .from('study-assets')
       .upload(fileName, file)
