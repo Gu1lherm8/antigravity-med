@@ -112,9 +112,9 @@ function SummaryForm({ subjects, onSave, onCancel, initial }: SummaryFormProps) 
     }
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
+  const inputClass = "w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:bg-slate-700 transition-all"
   const labelClass = "block text-xs font-medium text-slate-400 mb-1.5"
-  const selectClass = `${inputClass} cursor-pointer`
+  const selectClass = `${inputClass} cursor-pointer [&>option]:bg-slate-800 [&>option]:text-slate-200`
 
   return (
     <div className="flex flex-col gap-5">
@@ -330,8 +330,8 @@ export default function SummaryModule({ initialSubjectId }: SummaryModuleProps) 
     load()
   }
 
-  const inputClass = "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
-  const selectClass = `${inputClass} cursor-pointer`
+  const inputClass = "bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
+  const selectClass = `${inputClass} cursor-pointer [&>option]:bg-slate-800 [&>option]:text-slate-200`
 
   return (
     <div className="flex flex-col gap-6">

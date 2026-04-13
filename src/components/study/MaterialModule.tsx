@@ -83,8 +83,9 @@ function MaterialForm({ subjects, initial, onSave, onCancel }: MaterialFormProps
       const url = await materialService.uploadFile(file, form.type ?? 'materials')
       set('file_url', url)
       if (!form.title) set('title', file.name.replace(/\.[^.]+$/, ''))
-    } catch {
-      setError('Erro ao fazer upload')
+    } catch (err: any) {
+      console.error('Upload falhou:', err)
+      setError(`Erro ao fazer upload do arquivo: ${err.message || 'Falha no servidor'}`)
     } finally {
       setUploading(false)
     }
@@ -97,8 +98,9 @@ function MaterialForm({ subjects, initial, onSave, onCancel }: MaterialFormProps
     try {
       const url = await materialService.uploadFile(file, 'thumbnails')
       set('thumbnail_url', url)
-    } catch {
-      setError('Erro ao fazer upload da capa')
+    } catch (err: any) {
+      console.error('Upload de capa falhou:', err)
+      setError(`Erro ao fazer upload da capa: ${err.message || 'Falha no servidor'}`)
     } finally {
       setUploading(false)
     }
@@ -125,9 +127,9 @@ function MaterialForm({ subjects, initial, onSave, onCancel }: MaterialFormProps
     }
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
+  const inputClass = "w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:bg-slate-700 transition-all"
   const labelClass = "block text-xs font-medium text-slate-400 mb-1.5"
-  const selectClass = `${inputClass} cursor-pointer`
+  const selectClass = `${inputClass} cursor-pointer [&>option]:bg-slate-800 [&>option]:text-slate-200`
   const TypeIcon = MATERIAL_TYPES[form.type ?? 'pdf']?.icon ?? FileText
 
   return (
@@ -440,8 +442,8 @@ export default function MaterialModule({ initialSubjectId }: MaterialModuleProps
     load()
   }
 
-  const inputClass = "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
-  const selectClass = `${inputClass} cursor-pointer`
+  const inputClass = "bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
+  const selectClass = `${inputClass} cursor-pointer [&>option]:bg-slate-800 [&>option]:text-slate-200`
 
   // Agrupar por tipo para exibição
   const grouped = materials.reduce<Record<string, Material[]>>((acc, m) => {
