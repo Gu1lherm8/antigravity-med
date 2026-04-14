@@ -8,12 +8,43 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Plus, Search, Filter, BookCheck, Upload,
   Calendar, Tag, ChevronDown, X, Eye, Pencil,
-  Trash2, Clock, FileText, AlertCircle
+  Trash2, Clock, FileText, AlertCircle, Loader2
 } from 'lucide-react'
 import { summaryService, subjectService, topicService, subtopicService } from '../../services/studyService'
 import type { Summary, SummaryInsert, Subject, Topic, Subtopic, Front } from '../../types/study'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Configuração do worker do PDF.js para extração local
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // ── Helpers ───────────────────────────────────────────────────
+
+async function extractTextFromPDF(file: File): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => ('str' in item ? item.str : ''))
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+
+      resolve(fullText.trim());
+    } catch (error) {
+      console.error('Erro na extração de PDF:', error);
+      reject(new Error('Falha ao processar o arquivo PDF localmente.'));
+    }
+  });
+}
 
 const FRONT_LABELS: Record<Front, { label: string; color: string }> = {
   A: { label: 'Frente A', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
@@ -55,6 +86,7 @@ function SummaryForm({ subjects, onSave, onCancel, initial }: SummaryFormProps) 
   const [subtopics, setSubtopics] = useState<Subtopic[]>([])
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [readingPDF, setReadingPDF] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -90,13 +122,29 @@ function SummaryForm({ subjects, onSave, onCancel, initial }: SummaryFormProps) 
   const handlePDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    // Aqui você pode integrar com uma API de extração de PDF
-    // Por ora, seta o nome do arquivo e source_type
-    set('source_type', 'pdf')
-    set('source_file', file.name)
-    set('title', file.name.replace('.pdf', ''))
-    // Placeholder: conteúdo seria gerado externamente (NotebookLM, etc.)
-    set('content', `[PDF importado: ${file.name}]\n\nAdicione o conteúdo do resumo aqui.`)
+
+    setReadingPDF(true)
+    setError(null)
+    
+    try {
+      set('source_type', 'pdf')
+      set('source_file', file.name)
+      set('title', file.name.replace('.pdf', ''))
+      
+      const text = await extractTextFromPDF(file)
+      
+      if (text.length > 0) {
+        set('content', `[CONTEÚDO EXTRAÍDO DO PDF: ${file.name}]\n\n${text}`)
+      } else {
+        setError('O PDF parece não conter texto extraível. Pode ser uma imagem.')
+        set('content', `[PDF importado: ${file.name}]\n\nFalha na extração de texto automático.`)
+      }
+    } catch (err) {
+      setError('Erro ao ler PDF.')
+      console.error(err)
+    } finally {
+      setReadingPDF(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -142,13 +190,22 @@ function SummaryForm({ subjects, onSave, onCancel, initial }: SummaryFormProps) 
           onClick={() => fileRef.current?.click()}
           className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500/30 hover:bg-white/3 transition-all"
         >
-          <Upload size={24} className="mx-auto mb-2 text-slate-500" />
-          <p className="text-sm text-slate-400">Clique para selecionar o PDF</p>
-          <p className="text-xs text-slate-600 mt-1">O título será preenchido automaticamente</p>
-          {form.source_file && (
-            <p className="text-xs text-indigo-400 mt-2 font-medium">{form.source_file}</p>
+          {readingPDF ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+              <p className="text-sm text-slate-400">Lendo conteúdo do PDF...</p>
+            </div>
+          ) : (
+            <>
+              <Upload size={24} className="mx-auto mb-2 text-slate-500" />
+              <p className="text-sm text-slate-400">Clique para selecionar o PDF</p>
+              <p className="text-xs text-slate-600 mt-1">O texto será extraído automaticamente</p>
+              {form.source_file && (
+                <p className="text-xs text-indigo-400 mt-2 font-medium">{form.source_file}</p>
+              )}
+            </>
           )}
-          <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePDF} />
+          <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePDF} disabled={readingPDF} />
         </div>
       )}
 
