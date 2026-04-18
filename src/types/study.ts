@@ -193,3 +193,59 @@ export interface StudyFilters {
   tags?: string[]
   search?: string
 }
+
+// ── Secretário IA & Gaps ──────────────────────────────────────
+
+export interface ExternalActivity {
+  id: string
+  user_id?: string
+  source: 'moodle' | 'blackboard' | 'scanner'
+  type: 'video_lesson' | 'quiz' | 'pdf'
+  title: string
+  subject_id?: string
+  topic_id?: string
+  completed: boolean
+  raw_data?: any
+  study_date: string
+  created_at: string
+}
+
+export interface ConceptPerformance {
+  id: string
+  user_id?: string
+  topic_id: string
+  correct_count: number
+  total_attempts: number
+  accuracy_percent: number
+  last_attempted?: string
+  time_spent_total: number
+  updated_at: string
+}
+
+export interface LearningGap {
+  id: string
+  user_id?: string
+  topic_id: string
+  priority_score: number
+  priority_level: 'CRÍTICO' | 'ALTO' | 'MÉDIO' | 'BAIXO'
+  impact_score: number
+  urgency_score: number
+  decay_score: number
+  dependency_score: number
+  reason?: string
+  sequence_order?: number
+  next_action?: string
+  last_calculated: string
+  // joins
+  topic?: Topic
+}
+
+export interface SecretaryDailyPlanTask {
+  order: number
+  action: string
+  duration: number
+  reason: string
+  concept_id: string
+  priority: 'CRÍTICO' | 'ALTO' | 'MÉDIO'
+  type: 'question' | 'summary' | 'review'
+}

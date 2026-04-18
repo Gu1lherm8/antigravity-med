@@ -34,7 +34,8 @@ import { MissaoDoDia } from './components/MissaoDoDia';
 import { CalendarioSemanal } from './components/CalendarioSemanal';
 import { CadernoDeErros } from './components/CadernoDeErros';
 import { FlowEngine } from './components/FlowEngine';
-import { PainelGlobal } from './components/PainelGlobal';
+import { SecretaryDashboard } from './components/SecretaryDashboard';
+import { SecretaryButton } from './components/SecretaryButton';
 import { ConfigurarCerebro } from './components/ConfigurarCerebro';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
@@ -272,7 +273,7 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === 'painel'       && <PainelGlobal />}
+            {activeTab === 'painel'       && <SecretaryDashboard />}
             {activeTab === 'missao'       && <MissaoDoDia onStartFlow={handleStartPilot as any} />}
             {activeTab === 'calendario'   && <CalendarioSemanal />}
             {activeTab === 'recalculario' && <FlightPlan plan={null as any} onStart={handleStartPilot as any} />}
@@ -388,6 +389,8 @@ export default function App() {
               onClose={() => { setFlowQueue(null); setFlowPeriod(null); }}
             />
           )}
+
+          <SecretaryButton />
 
         </div>
       </main>

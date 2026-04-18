@@ -11,6 +11,7 @@ import {
   ChevronDown, ChevronUp, AlertCircle, Eye
 } from 'lucide-react'
 import { questionService, subjectService, topicService, subtopicService } from '../../services/studyService'
+import { DynamicGapUpdater } from '../../lib/intelligence/DynamicGapUpdater'
 import type { Question, QuestionInsert, QuestionOption, Subject, Topic, Subtopic, Front, Difficulty } from '../../types/study'
 
 // ── Config ────────────────────────────────────────────────────
@@ -371,7 +372,18 @@ function QuestionCard({ question, onEdit, onDelete }: { question: Question; onEd
             return (
               <button
                 key={opt.id}
-                onClick={() => setAnswered(opt.id)}
+                onClick={() => {
+                  setAnswered(opt.id);
+                  // Interligação com Secretário IA
+                  if (question.topic_id) {
+                    DynamicGapUpdater.onActivityCompleted(
+                      'public-test-user', // No real usaria o ID do Auth
+                      question.topic_id,
+                      opt.id === question.correct_option,
+                      30 // Mock de tempo gasto
+                    );
+                  }
+                }}
                 disabled={!!answered}
                 className={`flex items-center gap-3 p-3 rounded-lg border text-left text-sm transition-all
                   ${answered

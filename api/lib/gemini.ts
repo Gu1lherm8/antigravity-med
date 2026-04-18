@@ -107,6 +107,49 @@ export async function callGemini(
   throw new Error(`O Triturador IA esgotou todos os ${MODELS_FALLBACK.length} modelos disponíveis e nenhum respondeu. Verifique sua chave API e o status do faturamento no Google AI Studio. ÚLTIMO ERRO: ${lastError?.message}`);
 }
 
+/**
+ * Chama o Gemini com suporte a IMAGEM (Vision).
+ */
+export async function callGeminiVision(
+  prompt: string,
+  base64Image: string,
+  mimeType: string = 'image/jpeg',
+  systemInstruction: string = ''
+): Promise<GeminiResponse> {
+  const modelId = 'gemini-1.5-flash'; // Modelo preferencial para Vision/Velocidade
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
+
+  const body = {
+    contents: [{
+      parts: [
+        { text: systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt },
+        { inlineData: { mimeType, data: base64Image } }
+      ]
+    }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 2048 }
+  };
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini Vision Error (${response.status}): ${err}`);
+  }
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  return { 
+    text, 
+    modelUsed: modelId,
+    parsed: safeParseJSON(text) 
+  };
+}
+
 function safeParseJSON(text: string): any | null {
   try { return JSON.parse(text); } catch {}
   const jsonBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);

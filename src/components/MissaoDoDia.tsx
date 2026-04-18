@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Zap, CheckCircle2, Circle, Clock, Sun, Sunset, Moon,
-  Trophy, AlertTriangle
+  Trophy, AlertTriangle, Brain, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -82,6 +82,50 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
       { period: 'noite', title: 'Revisão de Flashcards', activity_type: 'flashcard', duration_minutes: 20, order_index: 4, color: '#f59e0b' },
     ];
     await supabase.from('daily_missions').insert(padrao.map(m => ({ ...m, date: today })));
+    await loadMissions();
+  }
+
+  // Importar do plano do Secretário (daily_task_queue → daily_missions)
+  async function importFromSecretary() {
+    const uid = '00000000-0000-0000-0000-000000000000';
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || uid;
+
+    const { data: tasks } = await supabase
+      .from('daily_task_queue')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('day_date', today)
+      .order('order_num');
+
+    if (!tasks || tasks.length === 0) {
+      await gerarMissoes();
+      return;
+    }
+
+    const TYPE_PERIOD: Record<string, 'manha' | 'tarde' | 'noite'> = {
+      theory: 'manha', questions: 'tarde', review: 'tarde', flashcards: 'noite',
+    };
+    const TYPE_ACTIVITY: Record<string, string> = {
+      theory: 'aula', questions: 'questoes', review: 'revisao', flashcards: 'flashcard',
+    };
+    const TYPE_COLOR: Record<string, string> = {
+      theory: '#3b82f6', questions: '#10b981', review: '#f59e0b', flashcards: '#8b5cf6',
+    };
+
+    const missions = tasks.map((t, i) => ({
+      date: today,
+      period: TYPE_PERIOD[t.type] || 'manha',
+      title: t.title,
+      description: t.reason || '',
+      activity_type: TYPE_ACTIVITY[t.type] || 'estudo',
+      duration_minutes: t.duration_minutes,
+      completed: t.status === 'done',
+      order_index: i + 1,
+      color: TYPE_COLOR[t.type] || '#6366f1',
+    }));
+
+    await supabase.from('daily_missions').insert(missions);
     await loadMissions();
   }
 
@@ -166,17 +210,28 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
 
       {/* Se não tem missões */}
       {total === 0 && (
-        <div className="flex flex-col items-center gap-4 py-12 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center">
-            <Zap className="w-8 h-8 text-text-secondary" />
+        <div className="flex flex-col items-center gap-5 py-12 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center">
+            <Brain className="w-8 h-8 text-teal-400" />
           </div>
           <div>
             <p className="text-xl font-bold text-white">Nenhuma missão para hoje</p>
-            <p className="text-text-secondary mt-1">Gere as missões do dia para começar</p>
+            <p className="text-slate-500 mt-1 font-medium text-sm">Importe do Secretário ou crie manualmente.</p>
           </div>
-          <button onClick={gerarMissoes} className="btn-primary flex items-center gap-2">
-            <Zap className="w-4 h-4" /> Gerar Missões do Dia
-          </button>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={importFromSecretary}
+              className="flex items-center justify-center gap-2 py-3 bg-teal-500 text-black font-black rounded-2xl hover:bg-teal-400 transition-all shadow-[0_10px_20px_rgba(20,184,166,0.2)]"
+            >
+              <Download className="w-4 h-4" /> Importar do Secretário
+            </button>
+            <button
+              onClick={gerarMissoes}
+              className="flex items-center justify-center gap-2 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/10 transition-all"
+            >
+              <Zap className="w-4 h-4" /> Gerar Padrão
+            </button>
+          </div>
         </div>
       )}
 
