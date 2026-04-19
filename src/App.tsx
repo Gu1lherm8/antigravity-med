@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   BookOpen, 
-  Zap, 
   Calendar, 
   Lock, 
   FlaskConical,
@@ -18,7 +17,6 @@ import {
   Flame,
   CheckCircle2,
   Upload,
-  GraduationCap,
   ChevronRight
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
@@ -41,13 +39,6 @@ import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
-// Imports Módulo ENEM
-import SubjectNav from './components/study/SubjectNav';
-import SummaryModule from './components/study/SummaryModule';
-import QuestionModule from './components/study/QuestionModule';
-import MaterialModule from './components/study/MaterialModule';
-import SimulationModule from './components/study/SimulationModule';
-
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
   { id: 'painel',       label: 'Painel de Voo',  icon: LayoutDashboard },
@@ -62,7 +53,6 @@ const NAV_ITEMS = [
   { id: 'config',       label: 'Configurações',  icon: Target },
   { id: 'biblioteca',   label: 'Biblioteca',     icon: Library },
   { id: 'triturador',   label: 'Triturador IA',  icon: Upload },
-  { id: 'enem',         label: 'Módulos ENEM',   icon: GraduationCap },
 ];
 
 export default function App() {
@@ -73,16 +63,7 @@ export default function App() {
   const [flowQueue, setFlowQueue] = useState<FlowTask[] | null>(null);
   const [flowPeriod, setFlowPeriod] = useState<'manha' | 'tarde' | 'noite' | 'personalizado' | null>(null);
 
-  // States Módulo ENEM
-  const [enemModule, setEnemModule] = useState('dashboard');
-  const [enemSubjectId, setEnemSubjectId] = useState<string | undefined>();
-  const [enemFront, setEnemFront] = useState<string | undefined>();
 
-  const handleEnemNavigate = (mod: string, subjId?: string, front?: string) => {
-    setEnemModule(mod);
-    setEnemSubjectId(subjId);
-    setEnemFront(front);
-  };
 
   useEffect(() => {
     checkActiveFlow();
@@ -286,100 +267,7 @@ export default function App() {
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
 
-            {activeTab === 'enem' && (
-              <div className="flex bg-[#080910] border border-white/5 rounded-2xl overflow-hidden min-h-[800px] h-full shadow-2xl">
-                <aside className="w-64 border-r border-white/5 bg-[#080910] overflow-y-auto shrink-0 z-10">
-                  <SubjectNav
-                    onNavigate={handleEnemNavigate}
-                    activeModule={enemModule}
-                    activeSubjectId={enemSubjectId}
-                  />
-                </aside>
-                <main className="flex-1 overflow-y-auto relative bg-[#05060A]">
-                  {enemModule === 'dashboard' && (
-                    <div className="p-8 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      {/* Banner Hero */}
-                      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/40 via-blue-900/10 to-transparent border border-indigo-500/20 p-8 shadow-2xl">
-                        <div className="absolute right-0 bottom-0 p-8 opacity-10 pointer-events-none transform translate-x-10 translate-y-10 group-hover:scale-110 transition-transform duration-700">
-                          <GraduationCap className="w-64 h-64" />
-                        </div>
-                        <div className="relative z-10 flex flex-col gap-4 max-w-2xl">
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
-                              Quartel General
-                            </span>
-                          </div>
-                          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-white">
-                            Base de Estudos ENEM
-                          </h2>
-                          <p className="text-text-secondary text-sm md:text-base font-bold leading-relaxed">
-                            Navegue pelo menu lateral para acessar a Teoria, resolver listas por Frente e treinar reconhecimento de padrões por assunto. O motor reage ao que você explorar aqui.
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Action Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        
-                        {/* Card 1 */}
-                        <div className="glass-card group cursor-default hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
-                          <div className="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500" />
-                          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-300">
-                            <BookOpen className="w-7 h-7" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-black text-white group-hover:text-indigo-400 transition-colors">Cadernos de Teoria</h3>
-                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
-                              Acesse resumos dinâmicos, teoria base e esquemas direcionados para cada área.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Card 2 */}
-                        <div className="glass-card group cursor-default hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
-                           <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500" />
-                          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-300">
-                            <Target className="w-7 h-7" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">Mapeamento Tático</h3>
-                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
-                              Estude por Frentes (A, B, C) e rastreie seu avanço em cada assunto isolado.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Card 3 */}
-                        <div className="glass-card group cursor-default hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.15)] transition-all p-6 relative overflow-hidden flex flex-col gap-4">
-                           <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-500" />
-                          <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 group-hover:scale-110 group-hover:bg-orange-500/20 transition-all duration-300">
-                            <Flame className="w-7 h-7" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">Forja de Erros</h3>
-                            <p className="text-xs text-text-secondary mt-2 font-medium leading-relaxed">
-                              Use simulados gerados automaticamente em cima das métricas de desempenho ruins.
-                            </p>
-                          </div>
-                        </div>
-
-                      </div>
-
-                    </div>
-                  )}
-                  {enemModule === 'summaries' && <SummaryModule initialSubjectId={enemSubjectId} />}
-                  {enemModule === 'questions' && <QuestionModule initialSubjectId={enemSubjectId} />}
-                  {enemModule === 'materials' && <MaterialModule initialSubjectId={enemSubjectId} />}
-                  {enemModule === 'simulations' && <SimulationModule />}
-                  {enemModule === 'front' && (
-                    <div className="p-8">
-                      <h2 className="text-2xl font-black tracking-tight text-white mb-2">Visão Específica — Frente {enemFront}</h2>
-                      <p className="text-sm text-slate-400">Acesse exclusivamente o conteúdo tático desta frente para manter a progressão cruzada de matérias.</p>
-                    </div>
-                  )}
-                </main>
-              </div>
-            )}
           </div>
 
           {flowQueue && flowPeriod && (
