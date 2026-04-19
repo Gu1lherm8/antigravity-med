@@ -69,7 +69,6 @@ export function CadernoDeErros() {
     if (!entry) return;
     const newCorrect = acertou ? entry.times_correct_after + 1 : entry.times_correct_after;
     const mastered = newCorrect >= 3;
-    const mastered = newCorrect >= 3;
     
     // Uso do OfflineService para garantir resiliência
     await offlineService.enqueueTask('error_notebook', {
