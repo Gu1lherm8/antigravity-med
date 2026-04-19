@@ -327,8 +327,3 @@ export class SpacedRepetitionEngine {
   }
 }
 
-// ============================================
-// TIPOS DE EXPORTAÇÃO
-// ============================================
-
-export type { ReviewSchedule, ReviewConfig, PerformanceMetric }

@@ -202,9 +202,9 @@ export function ConfigurarCerebro() {
                 <span className="text-2xl font-black text-indigo-400">{totalWeeklyHours} horas</span>
              </div>
           </div>
-      </div>
-
+      
           {/* Distribuição de Matérias */}
+
           <div className="glass-card p-8 flex flex-col gap-6">
             <div className="flex justify-between items-start">
               <div>
