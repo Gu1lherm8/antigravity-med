@@ -232,6 +232,14 @@ class OfflineService {
   }
 
   /**
+   * Alias de compatibilidade para o Caderno de Erros e componentes legados.
+   * Mapeia os argumentos para o novo formato do motor offline.
+   */
+  async enqueueTask(table: string, data: Record<string, any>, type: OfflineRecord['type'] = 'error'): Promise<string> {
+    return this.enqueue(type, 'insert', table, data);
+  }
+
+  /**
    * Sincronizar fila com Supabase
    */
   async syncQueue(): Promise<SyncStats> {
@@ -576,4 +584,5 @@ export async function initializeOfflineService(): Promise<void> {
  * Exportar tipos e classe para uso
  */
 export { OfflineService }
+export const offlineService = getOfflineService()
 export type { OfflineRecord, SyncStats, OfflineConfig, SyncEventListener }

@@ -5,9 +5,12 @@ import {
   Settings, AlertTriangle, TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { cerebroEngine } from '../services/cerebroService';
+import { cerebroEngine, cerebroConfigService } from '../services/cerebroService';
 import { spacedRepetitionService, type SpacedReviewRecord } from '../services/spaced-repetition.service';
 import { useCalendarCriticalReviews, utiCalendarIntegration } from '../services/uti-calendar-integration';
+import { intentionService } from '../services/intentionService';
+import { eventBus, APP_EVENTS } from '../services/eventBus';
+import { Brain, Zap, RefreshCw } from 'lucide-react';
 
 interface UserPreferences {
   hours_per_day: number;
@@ -85,21 +88,50 @@ export function CalendarioSemanal() {
   useEffect(() => { 
     loadEntries(); 
     loadPreferences();
+
+    // Inscrição no barramento de eventos para atualizações em tempo real
+    const unsubscribeSettings = eventBus.on(APP_EVENTS.SETTINGS_UPDATED, () => {
+      loadPreferences();
+      loadEntries();
+    });
+
+    const unsubscribeCritical = eventBus.on(APP_EVENTS.CRITICAL_ERROR_INJECTED, () => {
+      loadEntries();
+    });
+
+    return () => {
+      unsubscribeSettings();
+      unsubscribeCritical();
+    };
   }, [weekStart]);
 
   async function loadPreferences() {
-    const { data } = await supabase.from('user_study_preferences').select('*').single();
-    if (data) setPrefs(data);
+    try {
+      const data = await cerebroConfigService.getSettings();
+      if (data) {
+        setPrefs(prev => ({
+          ...prev,
+          hours_per_day: data.hours_per_day,
+          days_per_week: data.days_per_week
+        }));
+      }
+    } catch (err) {
+      console.error('Erro ao carregar preferências do cérebro:', err);
+    }
   }
 
   async function savePreferences(newPrefs: UserPreferences) {
-    const { error } = await supabase.from('user_study_preferences').upsert({ 
-      ...newPrefs, 
-      updated_at: new Date().toISOString() 
-    });
-    if (!error) {
+    try {
+      await cerebroConfigService.saveSettings({
+        hours_per_day: newPrefs.hours_per_day,
+        days_per_week: newPrefs.days_per_week
+      });
       setPrefs(newPrefs);
       setShowSettings(false);
+      // Notificar outros componentes que nós mudamos as configs aqui
+      eventBus.emit(APP_EVENTS.SETTINGS_UPDATED);
+    } catch (err) {
+      console.error('Erro ao salvar preferências:', err);
     }
   }
 
@@ -181,14 +213,20 @@ export function CalendarioSemanal() {
     await loadEntries();
   }
 
-  async function gerarSemanaV2() {
+  async function gerarSemana(mode: 'overwrite' | 'merge') {
     setLoading(true);
     try {
-      // 1. Limpa a semana atual para evitar duplicidade
-      await supabase.from('weekly_schedule').delete().eq('week_start', weekStart);
+      if (mode === 'overwrite') {
+        const ok = confirm('🛑 OVERWRITE: Isso apagará TUDO nesta semana para criar um cronograma do zero. Continuar?');
+        if (!ok) { setLoading(false); return; }
+        await supabase.from('weekly_schedule').delete().eq('week_start', weekStart);
+      } else {
+        const ok = confirm('📈 MERGE: Vou manter o que você já criou manual e adicionar apenas as novas aulas planejadas. Continuar?');
+        if (!ok) { setLoading(false); return; }
+      }
 
-      // 2. Gera o plano pelo Cérebro Central (Elite Engine)
-      const weekEntries = await cerebroEngine.generateWeeklyPlan(weekStart);
+      // 2. Gera o plano pelo Cérebro Central
+      const weekEntries = await cerebroEngine.generateWeeklyPlan(weekStart, mode);
 
       if (!weekEntries || weekEntries.length === 0) {
         alert('Cérebro: Não consegui gerar planos. Verifique suas metas e matérias!');
@@ -196,13 +234,20 @@ export function CalendarioSemanal() {
         return;
       }
 
-      // 3. Persiste no banco
-      const { error } = await supabase.from('weekly_schedule').insert(weekEntries);
+      // 3. Persiste no banco (No merge, o engine já traz o que deve ser mantido + novo)
+      // Se for merge, vamos limpar e reinserir o resultado do engine que já contém a mesclagem
+      if (mode === 'merge') {
+        await supabase.from('weekly_schedule').delete().eq('week_start', weekStart);
+      }
       
+      const { error } = await supabase.from('weekly_schedule').insert(weekEntries);
       if (error) throw error;
 
+      // 4. Marcar intenções como adicionadas
+      await intentionService.markAllAsAdded(weekStart);
+
       await loadEntries();
-      alert('🚀 Cronograma de Elite Gerado com Sucesso!');
+      alert(mode === 'merge' ? '🎖️ Prescrição Encaixada com Sucesso!' : '🚀 Cronograma Geral Gerado!');
     } catch (err: any) {
       console.error(err);
       alert('Erro ao gerar cronograma: ' + err.message);
@@ -225,15 +270,37 @@ export function CalendarioSemanal() {
           <p className="text-text-secondary mt-1">Organize e visualize sua semana de estudos</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={apagarSemana} className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20" title="Apagar Semana">
-            <Trash2 className="w-5 h-5" />
+          <button
+             onClick={() => eventBus.emit(APP_EVENTS.CHANGE_TAB, 'prescritor')}
+             className="flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-teal-500 hover:text-white transition-all shadow-[0_0_15px_rgba(20,184,166,0.1)]"
+          >
+            <Brain className="w-4 h-4" /> Prescrever Aulas
           </button>
+
+          <div className="flex bg-white/5 rounded-xl border border-white/10 p-1">
+            <button
+              onClick={() => gerarSemana('merge')}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-1.5 hover:bg-teal-500/10 text-teal-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30"
+              title="Encaixar intenções sem apagar atuais"
+            >
+              <Zap className="w-3 h-3" /> Mesclar
+            </button>
+            <div className="w-px h-4 bg-white/10 self-center mx-1" />
+            <button
+              onClick={() => gerarSemana('overwrite')}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-1.5 hover:bg-red-500/10 text-red-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30"
+              title="Limpar tudo e gerar do zero"
+            >
+              <RefreshCw className="w-3 h-3" /> Resetar
+            </button>
+          </div>
           <button onClick={() => setShowSettings(true)} className="p-2 rounded-xl bg-white/5 text-text-secondary hover:text-white transition-all border border-white/10">
             <Settings className="w-5 h-5" />
           </button>
-          <button onClick={gerarSemanaV2} disabled={loading} className="btn-primary text-sm flex items-center gap-2 py-2 px-4">
-            <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> 
-            {loading ? 'Sincronizando...' : 'Gerar Semana V2'}
+          <button onClick={apagarSemana} className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20" title="Apagar Semana">
+            <Trash2 className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 glass-card px-4 py-2">
             <button onClick={prevWeek} className="hover:text-white text-text-secondary transition-colors">
@@ -249,7 +316,6 @@ export function CalendarioSemanal() {
             <button onClick={nextWeek} className="hover:text-white text-text-secondary transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
-          </div>
           </div>
         </div>
       </div>

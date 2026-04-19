@@ -38,6 +38,7 @@ import { ConfigurarCerebro } from './components/ConfigurarCerebro';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
+import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
 import { initializeMigrations } from './services/setup-migrations';
@@ -59,6 +60,7 @@ const NAV_ITEMS = [
   { id: 'config',       label: 'Configurações',  icon: Target },
   { id: 'biblioteca',   label: 'Biblioteca',     icon: Library },
   { id: 'triturador',   label: 'Triturador IA',  icon: Upload },
+  { id: 'prescritor',   label: 'Prescritor Elite', icon: ShieldCheck },
 ];
 
 export default function App() {
@@ -80,6 +82,11 @@ export default function App() {
       checkActiveFlow();
     };
     startup();
+
+    const unsub = eventBus.on(APP_EVENTS.CHANGE_TAB, (tab: string) => {
+      setActiveTab(tab);
+    });
+    return () => unsub();
   }, []);
 
   async function checkActiveFlow() {
@@ -278,6 +285,7 @@ export default function App() {
             {activeTab === 'triagem'      && <TriDashboard />}
             {activeTab === 'curva'        && <CurvaDeEsquecimento />}
             {activeTab === 'config'       && <ConfigurarCerebro />}
+            {activeTab === 'prescritor'   && <PrescritorSemanal />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
 

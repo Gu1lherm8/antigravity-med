@@ -19,6 +19,7 @@ import { DataWarmupBanner } from './DataWarmupBanner';
 import { utiCalendarIntegration } from '../services/uti-calendar-integration';
 import { spacedRepetitionService } from '../services/spaced-repetition.service';
 import { Secretary } from '../lib/intelligence/Secretary';
+import { eventBus, APP_EVENTS } from '../services/eventBus';
 
 
 interface FailedAttempt {
@@ -111,6 +112,7 @@ export function UTI() {
             timestamp: new Date()
           });
           
+          eventBus.emit(APP_EVENTS.CRITICAL_ERROR_INJECTED);
           console.log('✅ ANTIGRAVITY: Triple Trigger disparado com sucesso via serviço integrado.');
         }
       } catch (e) {

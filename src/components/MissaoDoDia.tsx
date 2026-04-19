@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { DataWarmupBanner } from './DataWarmupBanner';
 import { MissionPDFExporter } from '../utils/mission-pdf-exporter';
+import { eventBus, APP_EVENTS } from '../services/eventBus';
 
 
 interface DailyMission {
@@ -55,7 +56,16 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
 
   const today = new Date().toISOString().split('T')[0];
 
-  useEffect(() => { loadMissions(); }, []);
+  useEffect(() => { 
+    loadMissions(); 
+
+    // Reatualizar se houver mudanças globais no cérebro
+    const unsubscribe = eventBus.on(APP_EVENTS.SETTINGS_UPDATED, () => {
+      loadMissions();
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   async function loadMissions() {
     setLoading(true);

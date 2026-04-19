@@ -399,7 +399,7 @@ export const spacedRepetitionService = {
 
   // ===== HELPERS =====
 
-  private mapDbRecordToInterface(data: any): SpacedReviewRecord {
+  mapDbRecordToInterface(data: any): SpacedReviewRecord {
     return {
       id: data.id,
       itemType: data.item_type,
@@ -418,7 +418,7 @@ export const spacedRepetitionService = {
     }
   },
 
-  private mapDbVViewRecordToInterface(data: any): SpacedReviewRecord {
+  mapDbVViewRecordToInterface(data: any): SpacedReviewRecord {
     return {
       id: data.id,
       itemType: 'topic',
@@ -437,7 +437,7 @@ export const spacedRepetitionService = {
     }
   },
 
-  private async createNotificationsForSchedule(scheduleId: string, schedule: any) {
+  async createNotificationsForSchedule(scheduleId: string, schedule: any) {
     const reviewDate = new Date(schedule.next_review_date)
     const today = new Date()
     today.setHours(0, 0, 0, 0)

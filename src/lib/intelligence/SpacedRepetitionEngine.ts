@@ -49,9 +49,9 @@ export interface PerformanceMetric {
 // CONFIGURAÇÃO DE DISCIPLINAS
 // ============================================
 
-const CRITICAL_SUBJECTS = ['Biologia', 'Física', 'Química', 'Matemática']
+export const CRITICAL_SUBJECTS = ['Biologia', 'Física', 'Química', 'Matemática']
 
-const REVIEW_CONFIGS: Record<string, ReviewConfig> = {
+export const REVIEW_CONFIGS: Record<string, ReviewConfig> = {
   'Biologia': {
     subjectName: 'Biologia',
     isCritical: true,
@@ -332,4 +332,3 @@ export class SpacedRepetitionEngine {
 // ============================================
 
 export type { ReviewSchedule, ReviewConfig, PerformanceMetric }
-export { SpacedRepetitionEngine, SM2Calculator, CRITICAL_SUBJECTS, REVIEW_CONFIGS }
