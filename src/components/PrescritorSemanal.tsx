@@ -29,18 +29,23 @@ export function PrescritorSemanal() {
 
   async function loadData() {
     setLoading(true);
+    
+    // Tratamento independente das matérias (Garante que a UI renderiza)
     try {
-      const [subs, currentIntentions] = await Promise.all([
-        subjectService.getAll(),
-        intentionService.getByWeek(weekStart)
-      ]);
+      const subs = await subjectService.getAll();
       setSubjects(subs);
+    } catch (err) {
+      console.error("Erro ao carregar matérias:", err);
+    }
+
+    try {
+      const currentIntentions = await intentionService.getByWeek(weekStart);
       setIntentions(currentIntentions);
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      console.error("Erro ao carregar intenções (Prescritor):", err);
     }
+
+    setLoading(false);
   }
 
   useEffect(() => {

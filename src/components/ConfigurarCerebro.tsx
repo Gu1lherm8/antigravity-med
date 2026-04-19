@@ -105,21 +105,7 @@ export function ConfigurarCerebro() {
   }
 
   const totalAllocatedHours = Object.values(settings.subject_distribution || {}).reduce((acc, curr) => acc + (curr || 0), 0);
-  const totalWeeklyHours = Object.values(settings.day_configs || {}).reduce((acc, curr) => acc + (curr.active ? curr.hours : 0), 0);
-
-  const DIAS_NOMES: Record<string, string> = {
-    "1": "Segunda", "2": "Terça", "3": "Quarta", "4": "Quinta", "5": "Sexta", "6": "Sábado", "0": "Domingo"
-  };
-
-  function updateDayConfig(day: string, updates: Partial<{active: boolean, hours: number, start_time: string}>) {
-    setSettings(prev => ({
-      ...prev,
-      day_configs: {
-        ...prev.day_configs!,
-        [day]: { ...prev.day_configs![day], ...updates }
-      }
-    }));
-  }
+  const totalWeeklyHours = (settings.days_per_week || 6) * (settings.hours_per_day || 4);
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full">
@@ -140,67 +126,39 @@ export function ConfigurarCerebro() {
         <div className="flex justify-center p-20"><div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" /></div>
       ) : (
         <div className="flex flex-col gap-8">
-          {/* Módulo: Agenda Semanal (Substitui os seletores antigos) */}
-          <div className="glass-card p-8 flex flex-col gap-6 border-indigo-500/20 border-t-4">
-             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black flex items-center gap-2 text-white">
-                  <Clock className="w-5 h-5 text-indigo-400" />
-                  Agenda Semanal (Horários Customizados)
-                </h3>
-             </div>
+          {/* Base Configuration */}
+          <div className="glass-card p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-2">
+               <label className="text-xs font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                 <Clock className="w-4 h-4" /> Horas de Estudo Diário
+               </label>
+               <div className="flex items-center gap-4">
+                 <input 
+                   type="range" 
+                   min="1" max="14" step="1" 
+                   value={settings.hours_per_day} 
+                   onChange={(e) => setSettings({ ...settings, hours_per_day: parseInt(e.target.value) })}
+                   className="w-full accent-indigo-500"
+                 />
+                 <span className="w-12 text-center font-black text-xl text-white">{settings.hours_per_day}h</span>
+               </div>
+            </div>
 
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(settings.day_configs || {}).sort((a,b) => {
-                  // Ordenação: 1-6 depois 0
-                  const valA = a[0] === "0" ? 7 : parseInt(a[0]);
-                  const valB = b[0] === "0" ? 7 : parseInt(b[0]);
-                  return valA - valB;
-                }).map(([day, config]) => (
-                  <div key={day} className={`p-4 rounded-2xl border transition-all flex flex-col gap-3 ${config.active ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-sm text-white">{DIAS_NOMES[day]}</span>
-                      <input 
-                        type="checkbox" 
-                        checked={config.active}
-                        onChange={(e) => updateDayConfig(day, { active: e.target.checked })}
-                        className="w-4 h-4 rounded-md accent-indigo-500"
-                      />
-                    </div>
-
-                    {config.active && (
-                      <>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Início</label>
-                          <input 
-                            type="time" 
-                            value={config.start_time}
-                            onChange={(e) => updateDayConfig(day, { start_time: e.target.value })}
-                            className="bg-black/20 border border-white/10 rounded-lg p-1.5 text-xs text-white outline-none focus:border-indigo-500 transition-all font-bold"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex justify-between">
-                             <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Duração</label>
-                             <span className="text-[10px] font-bold text-white">{config.hours}h</span>
-                          </div>
-                          <input 
-                            type="range" 
-                            min="1" max="14" step="1"
-                            value={config.hours}
-                            onChange={(e) => updateDayConfig(day, { hours: parseInt(e.target.value) })}
-                            className="w-full accent-indigo-400 h-1"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-             </div>
-
-             <div className="mt-2 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-between">
-                <span className="text-sm font-bold text-text-secondary">Seu fundo de horas semanal estimado:</span>
-                <span className="text-2xl font-black text-indigo-400">{totalWeeklyHours} horas</span>
-             </div>
+            <div className="flex flex-col gap-2">
+               <label className="text-xs font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                 <CalendarDays className="w-4 h-4" /> Dias de Estudo por Semana
+               </label>
+               <div className="flex items-center gap-4">
+                 <input 
+                   type="range" 
+                   min="1" max="7" step="1" 
+                   value={settings.days_per_week} 
+                   onChange={(e) => setSettings({ ...settings, days_per_week: parseInt(e.target.value) })}
+                   className="w-full accent-indigo-500"
+                 />
+                 <span className="w-12 text-center font-black text-xl text-white">{settings.days_per_week}d</span>
+               </div>
+            </div>
           </div>
       
           {/* Distribuição de Matérias */}
