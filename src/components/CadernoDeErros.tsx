@@ -4,6 +4,7 @@ import {
   RefreshCw, Star, AlertCircle, X, Filter, Trophy, Zap, Trash2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { offlineService } from '../services/offlineService';
 
 interface ErrorEntry {
   id: string;
@@ -68,18 +69,26 @@ export function CadernoDeErros() {
     if (!entry) return;
     const newCorrect = acertou ? entry.times_correct_after + 1 : entry.times_correct_after;
     const mastered = newCorrect >= 3;
-    await supabase.from('error_notebook').update({
+    const mastered = newCorrect >= 3;
+    
+    // Uso do OfflineService para garantir resiliência
+    await offlineService.enqueueTask('error_notebook', {
+      id,
       times_reviewed: entry.times_reviewed + 1,
       times_correct_after: newCorrect,
       mastered,
       last_reviewed_at: new Date().toISOString(),
-    }).eq('id', id);
+    }, 'UPDATE');
+    
     await loadErrors();
   }
 
   async function saveNovoErro() {
     if (!novoErro.question_text.trim()) return;
-    await supabase.from('error_notebook').insert(novoErro);
+    
+    // Inserção via OfflineService
+    await offlineService.enqueueTask('error_notebook', novoErro, 'INSERT');
+    
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });
     await loadErrors();

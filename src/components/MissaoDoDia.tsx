@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DataWarmupBanner } from './DataWarmupBanner';
+import { MissionPDFExporter } from '../utils/mission-pdf-exporter';
 
 
 interface DailyMission {
@@ -159,6 +160,30 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
     onStartFlow(queue, period);
   }
 
+  async function exportToPDF() {
+    const tasks = missions.map((m, idx) => ({
+      id: m.id,
+      order: idx + 1,
+      type: m.activity_type as any,
+      title: m.title,
+      subject: m.description || 'Geral',
+      durationMinutes: m.duration_minutes || 30,
+      description: m.description
+    }));
+
+    const qrUrl = `${window.location.origin}/mission/sync/${today}`;
+
+    await MissionPDFExporter.generateMissionPDF({
+      date: new Date(),
+      tasks,
+      totalMinutes: tasks.reduce((sum, t) => sum + t.durationMinutes, 0),
+      targetScore: 812, // Simulando meta
+      qrCodeUrl: qrUrl,
+      soundEnabled: true,
+      includeNotes: true
+    });
+  }
+
   return (
     <div className="flex flex-col gap-8    ">
       {/* Header com Preceptor */}
@@ -213,9 +238,18 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
         {total > 0 && concluidas < total && (
           <button 
             onClick={() => handleStartFlow(periodos.find(p => missions.some(m => m.period === p && !m.completed)) || 'manha')}
-            className="w-full py-4 bg-primary text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all"
+            className="w-full py-4 bg-primary text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all mb-3"
           >
             <Zap className="w-5 h-5 fill-current" /> COMEÇAR AGORA (FLOW ENGINE)
+          </button>
+        )}
+
+        {total > 0 && (
+          <button 
+            onClick={exportToPDF}
+            className="w-full py-3 bg-white/5 text-text-secondary hover:text-white font-bold rounded-2xl flex items-center justify-center gap-3 border border-white/10 transition-all"
+          >
+            <Download className="w-4 h-4" /> EXPORTAR PDF PARA IMPRESSÃO
           </button>
         )}
 

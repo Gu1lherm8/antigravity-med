@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cerebroEngine } from '../services/cerebroService';
+import { spacedRepetitionService, type SpacedReviewRecord } from '../services/spaced-repetition.service';
+import { useCalendarCriticalReviews, utiCalendarIntegration } from '../services/uti-calendar-integration';
 
 interface UserPreferences {
   hours_per_day: number;
@@ -76,6 +78,9 @@ export function CalendarioSemanal() {
   const [selected, setSelected] = useState<ScheduleEntry | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<UserPreferences>({ hours_per_day: 4, days_per_week: 5, intensity: 'Moderada' });
+  const [pendingReviews, setPendingReviews] = useState<SpacedReviewRecord[]>([]);
+
+  const { criticalReviews } = useCalendarCriticalReviews();
 
   useEffect(() => { 
     loadEntries(); 
@@ -100,12 +105,24 @@ export function CalendarioSemanal() {
 
   async function loadEntries() {
     setLoading(true);
-    const { data } = await supabase
+    // 1. Buscar entradas do cronograma fixo
+    const { data: scheduleData } = await supabase
       .from('weekly_schedule')
       .select('*')
       .eq('week_start', weekStart)
       .order('start_time');
-    setEntries(data || []);
+    
+    setEntries(scheduleData || []);
+
+    // 2. Buscar revisões pendentes (SM2)
+    try {
+      const overdue = await spacedRepetitionService.getOverdueReviews();
+      const todayReviews = await spacedRepetitionService.getReviewsDueToday();
+      setPendingReviews([...overdue, ...todayReviews]);
+    } catch (e) {
+      console.warn('⚠️ Erro ao carregar revisões SM2:', e);
+    }
+
     setLoading(false);
   }
 
@@ -233,8 +250,28 @@ export function CalendarioSemanal() {
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
+          </div>
         </div>
       </div>
+
+      {criticalReviews && criticalReviews.length > 0 && (
+        <div className="mb-4 mt-2 p-4 rounded-xl border border-red-500 bg-red-500/10">
+          <h3 className="text-red-400 font-bold mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5"/>
+            🚨 Revisões Críticas da U.T.I.
+          </h3>
+          <div className="flex flex-col gap-2">
+            {criticalReviews.map(review => (
+              <div
+                key={review.id}
+                dangerouslySetInnerHTML={{
+                  __html: utiCalendarIntegration.getBadgeHTML(review)
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-7 gap-3">
         {semana.map((dia, idx) => {
@@ -251,6 +288,19 @@ export function CalendarioSemanal() {
                   {dia.getDate()}
                 </span>
                 {isHoje && <span className="text-[9px] font-black text-primary uppercase tracking-widest">Hoje</span>}
+                {/* Indicador de Revisão Pura (SM2) */}
+                {pendingReviews.some(r => {
+                  const rDate = new Date(r.nextReviewDate);
+                  rDate.setHours(0,0,0,0);
+                  const dDate = new Date(dia);
+                  dDate.setHours(0,0,0,0);
+                  return rDate.getTime() === dDate.getTime() || (isHoje && rDate < dDate);
+                }) && (
+                  <div className="flex items-center gap-1 mt-1 bg-red-500/20 px-1.5 py-0.5 rounded-full border border-red-500/30">
+                    <AlertTriangle className="w-2.5 h-2.5 text-red-400" />
+                    <span className="text-[8px] font-black text-red-400 uppercase">Revisão</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5 flex-1">

@@ -37,7 +37,12 @@ import { SecretaryButton } from './components/SecretaryButton';
 import { ConfigurarCerebro } from './components/ConfigurarCerebro';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
+import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
+
+import { initializeMigrations } from './services/setup-migrations';
+import { initializeOfflineService } from './services/offlineService';
+import { initializePDFExporter } from './utils/mission-pdf-exporter';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
@@ -50,6 +55,7 @@ const NAV_ITEMS = [
   { id: 'caderno',      label: 'Caderno de Bula',icon: BookText },
   { id: 'uti',          label: 'UTI',            icon: AlertTriangle },
   { id: 'triagem',      label: 'Triagem',        icon: Stethoscope },
+  { id: 'curva',        label: 'Curva de Memória',icon: Brain },
   { id: 'config',       label: 'Configurações',  icon: Target },
   { id: 'biblioteca',   label: 'Biblioteca',     icon: Library },
   { id: 'triturador',   label: 'Triturador IA',  icon: Upload },
@@ -66,7 +72,14 @@ export default function App() {
 
 
   useEffect(() => {
-    checkActiveFlow();
+    const startup = async () => {
+      console.log('🚀 Iniciando Antigravity Med 2.0...');
+      await initializeMigrations();
+      await initializeOfflineService();
+      await initializePDFExporter();
+      checkActiveFlow();
+    };
+    startup();
   }, []);
 
   async function checkActiveFlow() {
@@ -263,6 +276,7 @@ export default function App() {
             {activeTab === 'caderno'      && <CadernoDeErros />}
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
+            {activeTab === 'curva'        && <CurvaDeEsquecimento />}
             {activeTab === 'config'       && <ConfigurarCerebro />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}

@@ -105,4 +105,43 @@ export class Secretary {
       return false;
     }
   }
+
+  /**
+   * Adiciona uma tarefa de emergência à fila do dia atual.
+   */
+  static async addEmergencyTask(topicId: string, title: string, duration: number = 45) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || '00000000-0000-0000-0000-000000000000';
+      const todayString = new Date().toISOString().split('T')[0];
+
+      // Pegar a última ordem
+      const { data: currentTasks } = await supabase
+        .from('daily_task_queue')
+        .select('order_num')
+        .eq('user_id', userId)
+        .eq('day_date', todayString)
+        .order('order_num', { ascending: false })
+        .limit(1);
+
+      const nextOrder = currentTasks && currentTasks.length > 0 ? currentTasks[0].order_num + 1 : 1;
+
+      await supabase.from('daily_task_queue').insert({
+        user_id: userId,
+        day_date: todayString,
+        title: `🚨 UTI: ${title}`,
+        duration_minutes: duration,
+        reason: 'Recuperação urgente baseada em erro crítico na UTI.',
+        topic_id: topicId,
+        priority: 'CRÍTICO',
+        type: 'summary',
+        order_num: nextOrder
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ ANTIGRAVITY: Erro ao adicionar tarefa de emergência:', error);
+      return false;
+    }
+  }
 }

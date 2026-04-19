@@ -16,6 +16,9 @@ import {
 import { sounds } from '../lib/intelligence/SoundService';
 import { ErrorActionableEngine, type ErrorPatologia } from '../lib/intelligence/ErrorActionableEngine';
 import { DataWarmupBanner } from './DataWarmupBanner';
+import { utiCalendarIntegration } from '../services/uti-calendar-integration';
+import { spacedRepetitionService } from '../services/spaced-repetition.service';
+import { Secretary } from '../lib/intelligence/Secretary';
 
 
 interface FailedAttempt {
@@ -87,6 +90,34 @@ export function UTI() {
     if (success) {
       sounds.playSuccess();
       setInjected(true);
+
+      // --- TRIPLE TRIGGER (INTELIGÊNCIA ANTIGRAVITY) ---
+      try {
+        // Buscar IDs reais do tópico e matéria pelo nome (fallback se necessário)
+        const { data: topicData } = await supabase
+          .from('topics')
+          .select('id, subject_id, subjects(name)')
+          .eq('name', selectedError.questions?.topic)
+          .single();
+
+        if (topicData) {
+          await utiCalendarIntegration.onErrorInjected({
+            errorNotebookId: selectedError.id,
+            topicId: topicData.id,
+            subjectId: topicData.subject_id,
+            topicName: selectedError.questions?.topic || 'Geral',
+            subjectName: topicData.subjects?.name || 'Geral',
+            errorType: treatmentType as any,
+            timestamp: new Date()
+          });
+          
+          console.log('✅ ANTIGRAVITY: Triple Trigger disparado com sucesso via serviço integrado.');
+        }
+      } catch (e) {
+        console.warn('⚠️ ANTIGRAVITY: Falha ao disparar Triple Trigger (IDs não encontrados):', e);
+      }
+      // ------------------------------------------------
+
     } else {
       sounds.playError();
     }
