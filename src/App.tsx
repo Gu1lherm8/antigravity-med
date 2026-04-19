@@ -44,6 +44,7 @@ import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowE
 import { initializeMigrations } from './services/setup-migrations';
 import { initializeOfflineService } from './services/offlineService';
 import { initializePDFExporter } from './utils/mission-pdf-exporter';
+import { eventBus, APP_EVENTS } from './services/eventBus';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
