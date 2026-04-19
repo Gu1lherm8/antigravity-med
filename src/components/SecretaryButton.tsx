@@ -197,6 +197,17 @@ export function SecretaryButton() {
                     <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
                   </div>
                 </button>
+
+                {/* Aviso warmup do Coach */}
+                <div className="flex items-start gap-2 px-1 py-1">
+                  <div className="w-3.5 h-3.5 rounded-full border border-amber-500/40 bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[7px] text-amber-400 font-black">i</span>
+                  </div>
+                  <p className="text-[9px] text-slate-600 leading-relaxed">
+                    O Coach fica mais preciso com o tempo.
+                    Após <span className="text-amber-400/80 font-bold">1-2 semanas</span> de uso, ele terá dados reais de acertos, erros e ritmo para gerar análise personalizada.
+                  </p>
+                </div>
               </>
             )}
 

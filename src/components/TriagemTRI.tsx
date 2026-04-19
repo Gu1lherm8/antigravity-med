@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Target, Activity, Zap, ShieldAlert, Scale, TrendingUp, Maximize2 } from 'lucide-react';
+import { DataWarmupBanner } from './DataWarmupBanner';
+
 
 // Interfaces
 interface TriHistory {
@@ -107,8 +109,23 @@ export function TriDashboard() {
           </div>
         </div>
 
-        {/* MUDAR MATÉRIA (Abas Rápidas) */}
-        <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto max-w-xl custom-scrollbar">
+      {/* AVISO: dados insuficientes */}
+      <DataWarmupBanner
+        hidden={historyData.length >= 5}
+        title="Motor T.R.I em aquecimento"
+        whatItDoes="O Motor T.R.I analisa sua evolução de proficiência ao longo do tempo usando Teoria de Resposta ao Item. Para gerar gráficos e detectar padrões reais, ele precisa de histórico de questões respondidas e sessões registradas."
+        needs={[
+          'Responder questões nos módulos de Matérias',
+          'Registrar rodadas de estudo no Cockpit do Assunto',
+          'Mínimo de 5 sessões para curva de evolução',
+          'Quanto mais dados, mais precisa a análise de coerência',
+        ]}
+        timeEstimate="1-2 semanas de uso regular"
+        variant="inline"
+      />
+
+      {/* MUDAR MATÉRIA (Abas Rápidas) */}
+      <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto max-w-xl custom-scrollbar">
           {subjects.map(sub => (
             <button 
               key={sub.id}
@@ -183,6 +200,15 @@ export function TriDashboard() {
             </button>
           </div>
           <div className="h-64 mt-4 relative">
+             {/* Overlay de warmup quando sem histórico */}
+             <DataWarmupBanner
+               hidden={curveData.length >= 3}
+               title="Sem histórico suficiente"
+               whatItDoes="O gráfico de evolução ativa com pelo menos 3 registros de sessão nesta matéria."
+               needs={['Registre rodadas de questões no Cockpit do Assunto']}
+               timeEstimate="alguns dias"
+               variant="overlay"
+             />
              {loading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                    <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />

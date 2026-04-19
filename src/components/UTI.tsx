@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { sounds } from '../lib/intelligence/SoundService';
 import { ErrorActionableEngine, type ErrorPatologia } from '../lib/intelligence/ErrorActionableEngine';
+import { DataWarmupBanner } from './DataWarmupBanner';
+
 
 interface FailedAttempt {
   id: string;
@@ -117,6 +119,20 @@ export function UTI() {
           </div>
         </div>
       </header>
+
+      {/* AVISO: sem dados de erros ainda */}
+      <DataWarmupBanner
+        hidden={errors.length > 0}
+        title="U.T.I aguardando pacientes"
+        whatItDoes="A UTI lista aqui os erros que você comete ao responder questões — e gera um protocolo de cura com reforço direcionado. Para isso funcionar, você precisa primeiro responder questões na plataforma."
+        needs={[
+          'Responda questões no módulo de Questões dentro de cada Matéria',
+          'Os erros aparecerão automaticamente aqui',
+          'O sistema detecta padrões: teoria, interpretação ou cálculo',
+        ]}
+        timeEstimate="1ª semana de uso"
+        variant="inline"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* LISTA DE CASOS CRÍTICOS */}

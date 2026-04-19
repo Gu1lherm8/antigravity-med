@@ -4,6 +4,8 @@ import {
   Trophy, AlertTriangle, Brain, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { DataWarmupBanner } from './DataWarmupBanner';
+
 
 interface DailyMission {
   id: string;
@@ -176,6 +178,22 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
       {/* Progresso do dia */}
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-4">
+
+        {/* Aviso warmup — aparece quando ainda há poucos dados */}
+        {total === 0 && (
+          <DataWarmupBanner
+            title="Missões manuais por ora"
+            whatItDoes="O Secretário vai gerar missões inteligentes e personalizadas automaticamente conforme você acumula dados de estudo. Nas primeiras semanas, use 'Gerar Padrão' como ponto de partida."
+            needs={[
+              'Registre aulas assistidas e rodadas de questões',
+              'O sistema detecta seus pontos fracos ao longo do tempo',
+              'Revisões programadas pela curva de esquecimento ativam após dados acumulados',
+            ]}
+            timeEstimate="1-2 semanas"
+            variant="inline"
+          />
+        )}
+
           <div>
             <h2 className="text-2xl font-black text-white tracking-tighter">🔥 MISSÃO DO DIA</h2>
             <p className="text-text-secondary text-sm mt-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
