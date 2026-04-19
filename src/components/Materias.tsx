@@ -156,7 +156,7 @@ function SubjectModal({ initial, onSave, onClose }: {
       front_a: frontA.trim() || null,
       front_b: frontB.trim() || null,
       front_c: frontC.trim() || null,
-    } as any);
+    });
     setSaving(false);
   }
 
@@ -930,7 +930,9 @@ export function Materias() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-black text-text-primary text-sm">{topic.name}</p>
+                          <p className="font-black text-text-primary text-sm">
+                            {topic.front ? `${topic.front}: ` : ''}{topic.name}
+                          </p>
                           {fc && (
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase border ${fc.color}`}>
                               {topic.front}
