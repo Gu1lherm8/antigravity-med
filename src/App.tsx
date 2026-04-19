@@ -41,10 +41,10 @@ import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
+import { eventBus, APP_EVENTS } from './services/eventBus';
 import { initializeMigrations } from './services/setup-migrations';
 import { initializeOfflineService } from './services/offlineService';
 import { initializePDFExporter } from './utils/mission-pdf-exporter';
-import { eventBus, APP_EVENTS } from './services/eventBus';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
@@ -83,11 +83,6 @@ export default function App() {
       checkActiveFlow();
     };
     startup();
-
-    const unsub = eventBus.on(APP_EVENTS.CHANGE_TAB, (tab: string) => {
-      setActiveTab(tab);
-    });
-    return () => unsub();
   }, []);
 
   async function checkActiveFlow() {

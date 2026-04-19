@@ -5,22 +5,14 @@
 // ============================================================
 
 import { supabase } from '../lib/supabase'
-import { intentionService } from './intentionService'
 
 // ── Tipos do Cérebro ──────────────────────────────────────────
-
-export interface DayConfig {
-  active: boolean
-  hours: number
-  start_time: string
-}
 
 export interface UserStudySettings {
   id: string
   days_per_week: number
   hours_per_day: number
   subject_distribution: Record<string, number> // subject_id -> horas na semana
-  day_configs?: Record<string, DayConfig> // "0" to "6"
 }
 
 export interface StudySessionLog {
@@ -221,13 +213,7 @@ export const cerebroEngine = {
 
     const plan: GeneratedPlanItem[] = []
     let totalMinutesAllocated = 0
-    
-    const day = new Date().getDay(); // 0-6
-    const dayConfig = settings.day_configs?.[String(day)] || { active: true, hours: settings.hours_per_day, start_time: "08:00" };
-    
-    if (!dayConfig.active) return []; // Retorna plano vazio se for dia de folga
-    
-    const targetMinutes = dayConfig.hours * 60
+    const targetMinutes = settings.hours_per_day * 60
 
     // 1. Injetar Revisões Pendentes primeiro (NÃO BLOQUEIAM E NÃO CONTAM COMO AVANÇO TEÓRICO)
     const revisions = await this.getPendingRevisions()
@@ -320,7 +306,7 @@ export const cerebroEngine = {
   },
 
   // Módulo 9: Gerador Semanal (O Coração do Cronograma)
-  async generateWeeklyPlan(weekStart: string, mode: 'overwrite' | 'merge' = 'overwrite'): Promise<any[]> {
+  async generateWeeklyPlan(weekStart: string): Promise<any[]> {
     const settings = await cerebroConfigService.getSettings()
     if (!settings) throw new Error("Cérebro não configurado.")
 
@@ -328,28 +314,16 @@ export const cerebroEngine = {
       { data: subjects },
       { data: logs },
       revisions,
-      errorCounts,
-      intentions
+      errorCounts
     ] = await Promise.all([
       supabase.from('subjects').select('*'),
       supabase.from('study_sessions_log').select('*').order('completed_at', { ascending: false }).limit(500),
       this.getPendingRevisions(),
-      cerebroLogService.getRecentErrors(),
-      intentionService.getByWeek(weekStart)
+      cerebroLogService.getRecentErrors()
     ])
 
     const subsArray = subjects || []
-    let weekEntries: any[] = []
-    
-    // Se for merge, carregar o que já existe
-    if (mode === 'merge') {
-      const { data } = await supabase
-        .from('weekly_schedule')
-        .select('*')
-        .eq('week_start', weekStart);
-      if (data) weekEntries = [...data];
-    }
-
+    const weekEntries: any[] = []
     const targetDays = settings.days_per_week
     const hoursPerDay = settings.hours_per_day
     const distribution = settings.subject_distribution || {}
@@ -364,123 +338,90 @@ export const cerebroEngine = {
       })
       .sort((a, b) => b.priority - a.priority)
 
-    // Helper para verificar se um slot está livre
-    const isSlotFree = (day: number, start: string, duration: number) => {
-      const startMinutes = (parseInt(start.split(':')[0]) * 60) + parseInt(start.split(':')[1])
-      const endMinutes = startMinutes + duration
-      
-      return !weekEntries.some(e => {
-        if (e.day_of_week !== day) return false
-        const eStart = (parseInt(e.start_time.split(':')[0]) * 60) + parseInt(e.start_time.split(':')[1])
-        const eEnd = eStart + e.duration_minutes
-        return (startMinutes < eEnd && endMinutes > eStart)
+    // Iterar pelos dias da semana (1-7, onde 1=Seg, 0=Dom)
+    // Para simplificar a lógica de 'day_of_week' no Supabase que costuma ser 0-6
+    for (let dayOffset = 1; dayOffset <= targetDays; dayOffset++) {
+      let currentHour = 8 // Início padrão 08:00
+      let dailyAllocated = 0
+      const targetDailyMinutes = hoursPerDay * 60
+
+      // 1. Inserir Flashcards (Daily Maintenance) - 30 min ao iniciar o dia
+      weekEntries.push({
+        week_start: weekStart,
+        day_of_week: dayOffset % 7,
+        activity_type: 'flashcard',
+        title: '🃏 Flashcards: Manutenção Global',
+        subject_name: 'Geral',
+        duration_minutes: 30,
+        start_time: `${String(currentHour).padStart(2, '0')}:00`,
+        color: '#8b5cf6',
+        status: 'pendente'
       })
-    }
+      currentHour += 0.5
+      dailyAllocated += 30
 
-    // 1. Alocar Intenções (Prescritor de Elite) - PRIORIDADE MÁXIMA
-    for (const intent of intentions) {
-      let allocated = false
-      for (let dayOffset = 1; dayOffset <= targetDays && !allocated; dayOffset++) {
-        const day = dayOffset % 7
-        // Tentar encaixar em horários nobres (09:00 ou 14:00)
-        const possibleStarts = ['09:00', '14:00', '10:30', '15:30', '08:00']
-        for (const start of possibleStarts) {
-          if (isSlotFree(day, start, intent.duration_minutes)) {
-            const entry = {
-              week_start: weekStart,
-              day_of_week: day,
-              activity_type: 'aula',
-              title: `🎯 AULA: ${intent.topics?.name}`,
-              subject_name: intent.subjects?.name,
-              duration_minutes: intent.duration_minutes,
-              start_time: start,
-              color: intent.subjects?.color || '#3b82f6',
-              status: 'pendente',
-              notes: `Prescrito via Elite. Frente: ${intent.topics?.front || 'A'}`
-            }
-            weekEntries.push(entry)
-            allocated = true
-            // Marcar como adicionada para não buscar novamente se rodar de novo (opcional, aqui cuidamos via transaction no calendar)
-            break
-          }
-        }
-      }
-    }
+      // 2. Tentar encaixar Revisões do dia (se houver)
+      // Nota: getPendingRevisions hoje é mocado por diff de dias, 
+      // precisaremos de lógica que projete revisões futuras para a semana toda
+      // Por ora, vamos focar em Avanço e Rotação de Frentes.
 
-    // 2. Preencher o restante (Lógica padrão de preenchimento)
-    for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
-      const day = dayOffset % 7
-      const dayConfig = settings.day_configs?.[String(day)] || { active: day !== 0, hours: settings.hours_per_day, start_time: "08:00" }
-
-      if (!dayConfig.active) continue
-
-      const startHourStr = dayConfig.start_time || "08:00"
-      const startHour = parseInt(startHourStr.split(':')[0]) + (parseInt(startHourStr.split(':')[1]) / 60)
-      const targetDailyMinutes = dayConfig.hours * 60
-      
-      // Calcular quanto já foi alocado hoje (incluindo manuais e intenções)
-      let dailyAllocated = weekEntries
-        .filter(e => e.day_of_week === day)
-        .reduce((sum, e) => sum + e.duration_minutes, 0)
-
-      // 1. Inserir Flashcards (Daily Maintenance) se houver espaço no início
-      if (isSlotFree(day, startHourStr, 30) && dailyAllocated + 30 <= targetDailyMinutes) {
-        weekEntries.push({
-          week_start: weekStart,
-          day_of_week: day,
-          activity_type: 'flashcard',
-          title: '🃏 Flashcards: Manutenção Global',
-          subject_name: 'Geral',
-          duration_minutes: 30,
-          start_time: startHourStr,
-          color: '#8b5cf6',
-          status: 'pendente'
-        })
-        dailyAllocated += 30
-      }
-
-      // 2. Alocar Matérias (Rotação) preenchendo buracos
+      // 3. Alocar Matérias (Rotação)
       for (const sub of prioritizedSubs) {
         if (dailyAllocated >= targetDailyMinutes) break
+
+        // Verifica se ainda tem horas pra essa matéria na semana
         if (sub.allocatedMinutes >= sub.targetMinutes) continue
 
-        const sessionDuration = 90
+        // Determinar Frente (Baseado no histórico real + o que já alocamos nesta semana)
+        const subLogs = [
+          ...logs?.filter(l => l.subject_id === sub.id) || [],
+          ...weekEntries.filter(e => e.subject_id === sub.id).map(e => ({ front: e.front }))
+        ]
         
-        // Tentar achar um horário livre para esse dia
-        let foundSlot = false
-        // Procurar a partir do startHour definido para o dia até 6h depois do limite de estudo
-        for (let h = startHour; h <= startHour + (targetDailyMinutes/60) + 4 && !foundSlot; h += 0.5) {
-          const startTime = `${String(Math.floor(h)).padStart(2, '0')}:${(h % 1) * 60 === 0 ? '00' : '30'}`
-          if (isSlotFree(day, startTime, sessionDuration) && dailyAllocated + sessionDuration <= targetDailyMinutes) {
-             
-            // Determinar Frente
-            const subLogs = [
-              ...logs?.filter(l => l.subject_id === sub.id) || [],
-              ...weekEntries.filter(e => e.subject_name === sub.name).map(e => ({ front: e.notes?.includes('Frente: B') ? 'B' : e.notes?.includes('Frente: C') ? 'C' : 'A' }))
-            ]
-            const countA = subLogs.filter(l => l.front === 'A').length
-            const countB = subLogs.filter(l => l.front === 'B').length
-            const countC = subLogs.filter(l => l.front === 'C').length
-            let nextFront: 'A' | 'B' | 'C' = 'A'
-            if (sub.front_c && countB > countC && countA > countC) nextFront = 'C'
-            else if (sub.front_b && countA > countB) nextFront = 'B'
+        const countA = subLogs.filter(l => l.front === 'A').length
+        const countB = subLogs.filter(l => l.front === 'B').length
+        const countC = subLogs.filter(l => l.front === 'C').length
 
-            weekEntries.push({
-              week_start: weekStart,
-              day_of_week: day,
-              activity_type: 'aula',
-              title: `📡 ${sub.name} - Frente ${nextFront}`,
-              subject_name: sub.name,
-              duration_minutes: sessionDuration,
-              start_time: startTime,
-              color: sub.color || '#3b82f6',
-              status: 'pendente',
-              notes: `Frente: ${nextFront}`
-            })
+        let nextFront: 'A' | 'B' | 'C' = 'A'
+        if (sub.front_c && countB > countC && countA > countC) nextFront = 'C'
+        else if (sub.front_b && countA > countB) nextFront = 'B'
 
-            dailyAllocated += sessionDuration
-            sub.allocatedMinutes += sessionDuration
-            foundSlot = true
+        const sessionDuration = 90 // 1h30m de bloco denso
+        if (dailyAllocated + sessionDuration <= targetDailyMinutes) {
+          weekEntries.push({
+            week_start: weekStart,
+            day_of_week: dayOffset % 7,
+            activity_type: 'aula',
+            title: `📡 ${sub.name} - Frente ${nextFront}`,
+            subject_name: sub.name,
+            duration_minutes: sessionDuration,
+            start_time: `${String(Math.floor(currentHour)).padStart(2, '0')}:${(currentHour % 1) * 60 === 0 ? '00' : '30'}`,
+            color: sub.color || '#3b82f6',
+            status: 'pendente',
+            notes: `Frente: ${nextFront}`
+          })
+          
+          currentHour += (sessionDuration / 60)
+          dailyAllocated += sessionDuration
+          sub.allocatedMinutes += sessionDuration
+
+          // Adicionar sessão de Questões imediata se houver tempo
+          if (dailyAllocated + 45 <= targetDailyMinutes) {
+             weekEntries.push({
+               week_start: weekStart,
+               day_of_week: dayOffset % 7,
+               activity_type: 'questoes',
+               title: `🎯 Fixação: ${sub.name} (${nextFront})`,
+               subject_name: sub.name,
+               duration_minutes: 45,
+               start_time: `${String(Math.floor(currentHour)).padStart(2, '0')}:${(currentHour % 1) * 60 === 0 ? '00' : '30'}`,
+               color: '#10b981',
+               status: 'pendente',
+               notes: `Frente: ${nextFront}`
+             })
+             currentHour += 0.75
+             dailyAllocated += 45
+             sub.allocatedMinutes += 45
           }
         }
       }

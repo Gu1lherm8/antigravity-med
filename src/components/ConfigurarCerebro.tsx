@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save, CheckCircle2, AlertCircle, Clock, CalendarDays, BrainCircuit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cerebroConfigService, UserStudySettings } from '../services/cerebroService';
-import { eventBus, APP_EVENTS } from '../services/eventBus';
 
 export function ConfigurarCerebro() {
   const [loading, setLoading] = useState(true);
@@ -38,34 +37,13 @@ export function ConfigurarCerebro() {
         setSettings({
           days_per_week: configData.days_per_week ?? 6,
           hours_per_day: configData.hours_per_day ?? 4,
-          subject_distribution: configData.subject_distribution || {},
-          day_configs: configData.day_configs || {
-            "1": { active: true, hours: 4, start_time: "08:00" },
-            "2": { active: true, hours: 4, start_time: "08:00" },
-            "3": { active: true, hours: 4, start_time: "08:00" },
-            "4": { active: true, hours: 4, start_time: "08:00" },
-            "5": { active: true, hours: 4, start_time: "08:00" },
-            "6": { active: true, hours: 4, start_time: "08:00" },
-            "0": { active: false, hours: 4, start_time: "08:00" }
-          }
+          subject_distribution: configData.subject_distribution || {}
         });
       } else {
         // Initialize distribution to 0 for all subjects if new
         const initialDist: Record<string, number> = {};
         subs.forEach(s => { initialDist[s.id] = 0; });
-        setSettings(prev => ({ 
-          ...prev, 
-          subject_distribution: initialDist,
-          day_configs: {
-            "1": { active: true, hours: 4, start_time: "08:00" },
-            "2": { active: true, hours: 4, start_time: "08:00" },
-            "3": { active: true, hours: 4, start_time: "08:00" },
-            "4": { active: true, hours: 4, start_time: "08:00" },
-            "5": { active: true, hours: 4, start_time: "08:00" },
-            "6": { active: true, hours: 4, start_time: "08:00" },
-            "0": { active: false, hours: 4, start_time: "08:00" }
-          }
-        }));
+        setSettings(prev => ({ ...prev, subject_distribution: initialDist }));
       }
     } catch (err) {
       console.error(err);
@@ -94,7 +72,6 @@ export function ConfigurarCerebro() {
     setSaving(true);
     try {
       await cerebroConfigService.saveSettings(settings);
-      eventBus.emit(APP_EVENTS.SETTINGS_UPDATED);
       showToast('Cérebro Calibrado com Sucesso! 🧠✨');
     } catch (err) {
       console.error(err);
@@ -105,7 +82,7 @@ export function ConfigurarCerebro() {
   }
 
   const totalAllocatedHours = Object.values(settings.subject_distribution || {}).reduce((acc, curr) => acc + (curr || 0), 0);
-  const totalWeeklyHours = (settings.days_per_week || 6) * (settings.hours_per_day || 4);
+  const totalWeeklyHours = (settings.days_per_week || 0) * (settings.hours_per_day || 0);
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full">
@@ -126,43 +103,65 @@ export function ConfigurarCerebro() {
         <div className="flex justify-center p-20"><div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" /></div>
       ) : (
         <div className="flex flex-col gap-8">
-          {/* Base Configuration */}
-          <div className="glass-card p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex flex-col gap-2">
-               <label className="text-xs font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                 <Clock className="w-4 h-4" /> Horas de Estudo Diário
-               </label>
-               <div className="flex items-center gap-4">
-                 <input 
-                   type="range" 
-                   min="1" max="14" step="1" 
-                   value={settings.hours_per_day} 
-                   onChange={(e) => setSettings({ ...settings, hours_per_day: parseInt(e.target.value) })}
-                   className="w-full accent-indigo-500"
-                 />
-                 <span className="w-12 text-center font-black text-xl text-white">{settings.hours_per_day}h</span>
-               </div>
+          
+          {/* Card Principal de Tempo */}
+          <div className="glass-card p-8 flex flex-col gap-6 border-indigo-500/20 border-t-4">
+            <h3 className="text-xl font-black flex items-center gap-2 text-white">
+              <Clock className="w-5 h-5 text-indigo-400" />
+              Carga Horária Base
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Dias por Semana */}
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-end">
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Dias por Semana</label>
+                  <span className="text-xl font-black text-indigo-400">{settings.days_per_week}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="7"
+                  step="1"
+                  value={settings.days_per_week || 1}
+                  onChange={(e) => setSettings({ ...settings, days_per_week: parseInt(e.target.value) })}
+                  className="w-full accent-indigo-500"
+                />
+                <div className="flex justify-between text-[10px] text-text-secondary/50 font-bold">
+                  <span>1 dia</span>
+                  <span>7 dias</span>
+                </div>
+              </div>
+
+              {/* Horas por Dia */}
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-end">
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Horas Líquidas por Dia</label>
+                  <span className="text-xl font-black text-indigo-400">{settings.hours_per_day}h</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="14"
+                  step="1"
+                  value={settings.hours_per_day || 1}
+                  onChange={(e) => setSettings({ ...settings, hours_per_day: parseInt(e.target.value) })}
+                  className="w-full accent-indigo-500"
+                />
+                <div className="flex justify-between text-[10px] text-text-secondary/50 font-bold">
+                  <span>1h/dia</span>
+                  <span>14h/dia</span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-               <label className="text-xs font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                 <CalendarDays className="w-4 h-4" /> Dias de Estudo por Semana
-               </label>
-               <div className="flex items-center gap-4">
-                 <input 
-                   type="range" 
-                   min="1" max="7" step="1" 
-                   value={settings.days_per_week} 
-                   onChange={(e) => setSettings({ ...settings, days_per_week: parseInt(e.target.value) })}
-                   className="w-full accent-indigo-500"
-                 />
-                 <span className="w-12 text-center font-black text-xl text-white">{settings.days_per_week}d</span>
-               </div>
+            <div className="mt-2 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-between">
+              <span className="text-sm font-bold text-text-secondary">Seu fundo de horas semanal estimado:</span>
+              <span className="text-2xl font-black text-indigo-400">{totalWeeklyHours} horas</span>
             </div>
           </div>
-      
-          {/* Distribuição de Matérias */}
 
+          {/* Distribuição de Matérias */}
           <div className="glass-card p-8 flex flex-col gap-6">
             <div className="flex justify-between items-start">
               <div>
