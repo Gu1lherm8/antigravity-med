@@ -40,6 +40,7 @@ import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
+import { RevisaoInteligente } from './components/RevisaoInteligente';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
 import { eventBus, APP_EVENTS } from './services/eventBus';
@@ -56,6 +57,7 @@ const NAV_ITEMS = [
   { id: 'materias',     label: 'Matérias',         icon: BookOpen },
   { id: 'plano',        label: 'Plano de Voo',     icon: ClipboardList },
   { id: 'caderno',      label: 'Caderno de Bula',  icon: BookText },
+  { id: 'revisao',      label: 'Revisão',          icon: Brain },
   { id: 'uti',          label: 'UTI',              icon: AlertTriangle },
   { id: 'triagem',      label: 'Triagem',          icon: Stethoscope },
   { id: 'curva',        label: 'Curva de Memória', icon: Brain },
@@ -278,6 +280,7 @@ export default function App() {
             {activeTab === 'materias'     && <Materias />}
             {activeTab === 'plano'        && <FlightPlan plan={null as any} onStart={handleStartPilot as any} />}
             {activeTab === 'caderno'      && <CadernoDeErros />}
+            {activeTab === 'revisao'      && <RevisaoInteligente />}
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
             {activeTab === 'curva'        && <CurvaDeEsquecimento />}
