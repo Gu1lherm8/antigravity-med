@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   Upload,
   ChevronRight,
-  CalendarCheck
+  BrainCircuit
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
@@ -35,7 +35,6 @@ import { CadernoDeErros } from './components/CadernoDeErros';
 import { FlowEngine } from './components/FlowEngine';
 import { SecretaryDashboard } from './components/SecretaryDashboard';
 import { SecretaryButton } from './components/SecretaryButton';
-import { ConfigurarCerebro } from './components/ConfigurarCerebro';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
@@ -61,10 +60,9 @@ const NAV_ITEMS = [
   { id: 'uti',          label: 'UTI',              icon: AlertTriangle },
   { id: 'triagem',      label: 'Triagem',          icon: Stethoscope },
   { id: 'curva',        label: 'Curva de Memória', icon: Brain },
-  { id: 'config',       label: 'Cérebro',          icon: Brain },
+  { id: 'cerebro',      label: 'Cérebro Central',  icon: BrainCircuit },
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
-  { id: 'prescritor',   label: 'Prescritor Elite', icon: CalendarCheck },
 ];
 
 export default function App() {
@@ -284,8 +282,7 @@ export default function App() {
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
             {activeTab === 'curva'        && <CurvaDeEsquecimento />}
-            {activeTab === 'config'       && <ConfigurarCerebro onNavigateToCalendar={() => setActiveTab('calendario')} />}
-            {activeTab === 'prescritor'   && <PrescritorSemanal />}
+            {activeTab === 'cerebro'      && <PrescritorSemanal onNavigateToCalendar={() => setActiveTab('calendario')} />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
 
