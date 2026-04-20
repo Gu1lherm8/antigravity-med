@@ -17,7 +17,8 @@ import {
   Flame,
   CheckCircle2,
   Upload,
-  ChevronRight
+  ChevronRight,
+  CalendarCheck
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
@@ -47,21 +48,21 @@ import { initializeOfflineService } from './services/offlineService';
 import { initializePDFExporter } from './utils/mission-pdf-exporter';
 
 const NAV_ITEMS = [
-  { id: 'dashboard',    label: 'Preceptor',      icon: ShieldCheck },
-  { id: 'painel',       label: 'Painel de Voo',  icon: LayoutDashboard },
-  { id: 'missao',       label: 'Missão do Dia',  icon: Target },
-  { id: 'calendario',   label: 'Calendário',     icon: Calendar },
-  { id: 'recalculario', label: 'Recalculatório', icon: FlaskConical },
-  { id: 'materias',     label: 'Matérias',       icon: BookOpen },
-  { id: 'plano',        label: 'Plano de Voo',   icon: ClipboardList },
-  { id: 'caderno',      label: 'Caderno de Bula',icon: BookText },
-  { id: 'uti',          label: 'UTI',            icon: AlertTriangle },
-  { id: 'triagem',      label: 'Triagem',        icon: Stethoscope },
-  { id: 'curva',        label: 'Curva de Memória',icon: Brain },
-  { id: 'config',       label: 'Configurações',  icon: Target },
-  { id: 'biblioteca',   label: 'Biblioteca',     icon: Library },
-  { id: 'triturador',   label: 'Triturador IA',  icon: Upload },
-  { id: 'prescritor',   label: 'Prescritor Elite', icon: ShieldCheck },
+  { id: 'dashboard',    label: 'Preceptor',        icon: ShieldCheck },
+  { id: 'painel',       label: 'Painel de Voo',    icon: LayoutDashboard },
+  { id: 'missao',       label: 'Missão do Dia',    icon: Target },
+  { id: 'calendario',   label: 'Calendário',       icon: Calendar },
+  { id: 'recalculario', label: 'Recalculatório',   icon: FlaskConical },
+  { id: 'materias',     label: 'Matérias',         icon: BookOpen },
+  { id: 'plano',        label: 'Plano de Voo',     icon: ClipboardList },
+  { id: 'caderno',      label: 'Caderno de Bula',  icon: BookText },
+  { id: 'uti',          label: 'UTI',              icon: AlertTriangle },
+  { id: 'triagem',      label: 'Triagem',          icon: Stethoscope },
+  { id: 'curva',        label: 'Curva de Memória', icon: Brain },
+  { id: 'config',       label: 'Cérebro',          icon: Brain },
+  { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
+  { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
+  { id: 'prescritor',   label: 'Prescritor Elite', icon: CalendarCheck },
 ];
 
 export default function App() {
@@ -280,7 +281,7 @@ export default function App() {
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
             {activeTab === 'curva'        && <CurvaDeEsquecimento />}
-            {activeTab === 'config'       && <ConfigurarCerebro />}
+            {activeTab === 'config'       && <ConfigurarCerebro onNavigateToCalendar={() => setActiveTab('calendario')} />}
             {activeTab === 'prescritor'   && <PrescritorSemanal />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}

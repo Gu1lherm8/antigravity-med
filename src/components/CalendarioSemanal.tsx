@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { cerebroEngine } from '../services/cerebroService';
 import { spacedRepetitionService, type SpacedReviewRecord } from '../services/spaced-repetition.service';
 import { useCalendarCriticalReviews, utiCalendarIntegration } from '../services/uti-calendar-integration';
+import { eventBus, APP_EVENTS } from '../services/eventBus';
 
 interface UserPreferences {
   hours_per_day: number;
@@ -86,6 +87,14 @@ export function CalendarioSemanal() {
     loadEntries(); 
     loadPreferences();
   }, [weekStart]);
+
+  // 🔔 Escuta o evento do Cérebro: quando salva, recarrega preferências
+  useEffect(() => {
+    const unsub = eventBus.on(APP_EVENTS.SETTINGS_UPDATED, () => {
+      loadPreferences();
+    });
+    return unsub;
+  }, []);
 
   async function loadPreferences() {
     const { data } = await supabase.from('user_study_preferences').select('*').single();
