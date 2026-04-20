@@ -9,6 +9,7 @@ import { cerebroEngine } from '../services/cerebroService';
 import { spacedRepetitionService, type SpacedReviewRecord } from '../services/spaced-repetition.service';
 import { useCalendarCriticalReviews, utiCalendarIntegration } from '../services/uti-calendar-integration';
 import { eventBus, APP_EVENTS } from '../services/eventBus';
+import { GradeFerretto } from './GradeFerretto';
 
 interface UserPreferences {
   hours_per_day: number;
@@ -157,6 +158,19 @@ export function CalendarioSemanal() {
       start_time: '08:00',
       color: '#6366f1',
       notes: '',
+    });
+  }
+
+  function handleAddFromFerretto(data: { nome: string; disciplina: string; frente: string }) {
+    setModal({
+      day_of_week: 1, // Segunda-feira por padrão
+      title: data.nome,
+      activity_type: 'aula',
+      subject_name: data.disciplina,
+      duration_minutes: 90,
+      start_time: '08:00',
+      color: '#3b82f6', // Cor azul do Boaro para Ferretto
+      notes: `Frente ${data.frente} • Importado da Grade Ferretto`,
     });
   }
 
@@ -499,6 +513,10 @@ export function CalendarioSemanal() {
           </div>
         </div>
       )}
+      
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mt-8" />
+      
+      <GradeFerretto onAddToCalendar={handleAddFromFerretto} />
     </div>
   );
 }
