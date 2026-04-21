@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import clsx from 'clsx';
 import {
   BookOpen, ChevronDown, ChevronUp, CheckCircle2, Clock,
   RefreshCw, Star, AlertCircle, X, Filter, Trophy, Zap, Trash2
