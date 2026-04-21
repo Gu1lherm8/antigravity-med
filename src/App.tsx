@@ -66,6 +66,7 @@ const NAV_ITEMS = [
 ];
 
 export default function App() {
+  console.log('ANTIGRAVITY V3 LOADING...');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [session, setSession] = useState<Session | null>({ user: { email: 'contato@antigravitymed.com' } } as any);
   const [loading] = useState(false);
