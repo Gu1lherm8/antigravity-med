@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Zap, CheckCircle2, Circle, Clock, Sun, Sunset, Moon,
-  Trophy, AlertTriangle, Brain, Download
+  Trophy, AlertTriangle, Brain, Download, Target
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DataWarmupBanner } from './DataWarmupBanner';
