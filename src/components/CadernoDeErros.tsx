@@ -124,7 +124,6 @@ export function CadernoDeErros({ session }: { session: any }) {
     const { data: savedError, error: insertError } = await supabase
       .from('error_notebook')
       .insert({
-        user_id: userId,
         question_text: novoErro.question_text,
         discipline: novoErro.discipline,
         topic: novoErro.topic,
