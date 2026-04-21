@@ -49,6 +49,8 @@ import { initializeOfflineService } from './services/offlineService';
 import { initializePDFExporter } from './utils/mission-pdf-exporter';
 
 const NAV_ITEMS = [
+  { id: 'knowledge-map', label: 'Mapa Neural',       icon: Map },
+  { id: 'error-analysis', label: 'Análise de Erros', icon: Target },
   { id: 'dashboard',    label: 'Preceptor',        icon: ShieldCheck },
   { id: 'painel',       label: 'Painel de Voo',    icon: LayoutDashboard },
   { id: 'missao',       label: 'Missão do Dia',    icon: Target },
@@ -61,8 +63,6 @@ const NAV_ITEMS = [
   { id: 'cerebro',      label: 'Cérebro Central',  icon: BrainCircuit },
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
-  { id: 'error-analysis', label: 'Análise de Erros', icon: Target },
-  { id: 'knowledge-map', label: 'Mapa Neural',       icon: Map },
 ];
 
 export default function App() {
