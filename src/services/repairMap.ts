@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 export async function repairKnowledgeMap() {
   console.log('🚀 Iniciando Reparo do Mapa Neural...');
   
-  const userId = 'manual_user';
+  const userId = '00000000-0000-0000-0000-000000000000';
 
   try {
     // 1. Buscar todos os erros de forma global (resgate)

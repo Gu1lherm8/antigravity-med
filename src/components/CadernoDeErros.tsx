@@ -103,7 +103,7 @@ export function CadernoDeErros({ session }: { session: any }) {
     }
 
     // Inserção via OfflineService
-    const userId = session?.user?.id || 'manual_user';
+    const userId = session?.user?.id || '00000000-0000-0000-0000-000000000000';
     await offlineService.enqueueTask('error_notebook', { ...novoErro, user_id: userId }, 'INSERT');
     
     // Inserção no sistema de análise inteligente
@@ -170,9 +170,28 @@ export function CadernoDeErros({ session }: { session: any }) {
       });
     }
 
+    // Atualização visual imediata na tela
+    const novoErroUI = {
+      id: Date.now().toString(),
+      ...novoErro,
+      times_reviewed: 0,
+      times_correct_after: 0,
+      mastered: false,
+      created_at: new Date().toISOString(),
+      last_reviewed_at: new Date().toISOString()
+    };
+    
+    setErrors(prev => [novoErroUI as any, ...prev]);
+
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });
-    await loadErrors();
+    
+    // Forçar a sincronização em segundo plano para enviar ao banco
+    try {
+      await offlineService.forceSyncNow();
+    } catch(e) {
+      console.log('Sincronização adiada', e);
+    }
   }
 
   async function deleteError(id: string) {
