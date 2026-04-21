@@ -285,7 +285,7 @@ export default function App() {
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
             {activeTab === 'error-analysis' && <ErrorAnalysisDashboard />}
-            {activeTab === 'knowledge-map' && <MapaDeConhecimento />}
+            {activeTab === 'knowledge-map' && <MapaDeConhecimento session={session} />}
 
 
           </div>
