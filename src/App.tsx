@@ -28,7 +28,6 @@ import { Materias } from './components/Materias';
 import { TriDashboard } from './components/TriagemTRI';
 import { BibliotecaUniversal } from './components/BibliotecaUniversal';
 import { UTI } from './components/UTI';
-import { FlightPlan } from './components/FlightPlan';
 import { MissaoDoDia } from './components/MissaoDoDia';
 import { CalendarioSemanal } from './components/CalendarioSemanal';
 import { CadernoDeErros } from './components/CadernoDeErros';
@@ -37,7 +36,6 @@ import { SecretaryDashboard } from './components/SecretaryDashboard';
 import { SecretaryButton } from './components/SecretaryButton';
 import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
-import { CurvaDeEsquecimento } from './components/CurvaDeEsquecimento';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { RevisaoInteligente } from './components/RevisaoInteligente';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
@@ -52,14 +50,11 @@ const NAV_ITEMS = [
   { id: 'painel',       label: 'Painel de Voo',    icon: LayoutDashboard },
   { id: 'missao',       label: 'Missão do Dia',    icon: Target },
   { id: 'calendario',   label: 'Calendário',       icon: Calendar },
-  { id: 'recalculario', label: 'Recalculatório',   icon: FlaskConical },
   { id: 'materias',     label: 'Matérias',         icon: BookOpen },
-  { id: 'plano',        label: 'Plano de Voo',     icon: ClipboardList },
   { id: 'caderno',      label: 'Caderno de Bula',  icon: BookText },
   { id: 'revisao',      label: 'Revisão',          icon: Brain },
   { id: 'uti',          label: 'UTI',              icon: AlertTriangle },
   { id: 'triagem',      label: 'Triagem',          icon: Stethoscope },
-  { id: 'curva',        label: 'Curva de Memória', icon: Brain },
   { id: 'cerebro',      label: 'Cérebro Central',  icon: BrainCircuit },
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
@@ -272,16 +267,13 @@ export default function App() {
             )}
 
             {activeTab === 'painel'       && <SecretaryDashboard />}
-            {activeTab === 'missao'       && <MissaoDoDia onStartFlow={handleStartPilot as any} />}
+            {(activeTab === 'missao' || activeTab === 'plano' || activeTab === 'recalculario') && <MissaoDoDia onStartFlow={handleStartPilot as any} />}
             {activeTab === 'calendario'   && <CalendarioSemanal />}
-            {activeTab === 'recalculario' && <FlightPlan plan={null as any} onStart={handleStartPilot as any} />}
             {activeTab === 'materias'     && <Materias />}
-            {activeTab === 'plano'        && <FlightPlan plan={null as any} onStart={handleStartPilot as any} />}
             {activeTab === 'caderno'      && <CadernoDeErros />}
-            {activeTab === 'revisao'      && <RevisaoInteligente />}
+            {(activeTab === 'revisao' || activeTab === 'curva') && <RevisaoInteligente />}
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}
-            {activeTab === 'curva'        && <CurvaDeEsquecimento />}
             {activeTab === 'cerebro'      && <PrescritorSemanal onNavigateToCalendar={() => setActiveTab('calendario')} />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}

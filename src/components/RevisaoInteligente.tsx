@@ -7,6 +7,7 @@ import {
   Play, BookOpen, Brain, Zap, Target, Calendar,
   ChevronDown, ChevronUp, ExternalLink
 } from 'lucide-react';
+import { CurvaDeEsquecimento } from './CurvaDeEsquecimento';
 import {
   studyModulesService,
   StudyModule,
@@ -927,7 +928,7 @@ function Progresso() {
 // ── Componente Principal ─────────────────────────────────────
 
 export function RevisaoInteligente() {
-  const [tab, setTab] = useState<'aulas' | 'hoje' | 'progresso'>('aulas');
+  const [tab, setTab] = useState<'aulas' | 'hoje' | 'progresso' | 'curva'>('aulas');
   const [modules, setModules] = useState<StudyModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNova, setShowNova] = useState(false);
@@ -991,6 +992,7 @@ export function RevisaoInteligente() {
         {([
           { id: 'aulas', label: 'Minhas Aulas', icon: BookOpen },
           { id: 'hoje', label: urgentCount > 0 ? `Revisar Hoje (${urgentCount})` : 'Revisar Hoje', icon: Zap },
+          { id: 'curva', label: 'Curva de Memória', icon: Brain },
           { id: 'progresso', label: 'Progresso', icon: BarChart3 },
         ] as const).map(({ id, label, icon: Icon }) => (
           <button
@@ -1047,6 +1049,7 @@ export function RevisaoInteligente() {
       )}
 
       {tab === 'hoje' && <RevisarHoje onRefresh={() => setRefreshKey(k => k + 1)} />}
+      {tab === 'curva' && <CurvaDeEsquecimento />}
       {tab === 'progresso' && <Progresso />}
 
       {/* Modais */}

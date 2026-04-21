@@ -7,6 +7,8 @@ import { supabase } from '../lib/supabase';
 import { DataWarmupBanner } from './DataWarmupBanner';
 import { MissionPDFExporter } from '../utils/mission-pdf-exporter';
 import { eventBus, APP_EVENTS } from '../services/eventBus';
+import { FlightPlan } from './FlightPlan';
+import { Receituario } from './Receituario';
 
 
 interface DailyMission {
@@ -53,6 +55,7 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
   const [loading, setLoading] = useState(true);
   const [activeMission] = useState<string | null>(null);
   const [preceptorFrase] = useState(() => PRECEPTOR_FRASES[Math.floor(Math.random() * PRECEPTOR_FRASES.length)]);
+  const [tab, setTab] = useState<'missao' | 'plano' | 'receita'>('missao');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -210,9 +213,33 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
         </div>
       </div>
 
-      {/* Progresso do dia */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-4">
+      {/* Seletor de Abas */}
+      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5">
+        {( [
+          { id: 'missao', label: 'Missão por Turnos', icon: Target },
+          { id: 'plano', label: 'Plano de Voo', icon: Zap },
+          { id: 'receita', label: 'Prescrição Rápida', icon: Brain },
+        ] as const).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs uppercase transition-all ${
+              tab === id
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+                : 'text-text-secondary hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'missao' && (
+        <>
+          {/* Progresso do dia */}
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-4">
 
         {/* Aviso warmup — aparece quando ainda há poucos dados */}
         {total === 0 && (
@@ -370,10 +397,24 @@ export function MissaoDoDia({ onStartFlow }: MissaoDoDiaProps) {
                     </div>
                   ))}
               </div>
-            </div>
-          );
-        })}
-      </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+      )}
+
+      {tab === 'plano' && (
+        <div className="glass-card p-8">
+          <FlightPlan plan={null} onStart={() => {}} />
+        </div>
+      )}
+
+      {tab === 'receita' && (
+        <div className="glass-card p-8">
+          <Receituario />
+        </div>
+      )}
     </div>
   );
 }
