@@ -37,7 +37,13 @@ export function MapaDeConhecimento({ session }: { session: any }) {
   const loadMapData = async () => {
     setLoading(true);
     try {
-      const userId = session?.user?.id || '00000000-0000-0000-0000-000000000000';
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || session?.user?.id;
+      
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
       
       // Buscar tópicos
       const { data: topicsData } = await supabase

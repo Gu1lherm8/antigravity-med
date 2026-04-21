@@ -71,15 +71,18 @@ export function CadernoDeErros({ session }: { session: any }) {
     const newCorrect = acertou ? entry.times_correct_after + 1 : entry.times_correct_after;
     const mastered = newCorrect >= 3;
     
-    // Uso do OfflineService para garantir resiliência
-    await offlineService.enqueueTask('error_notebook', {
-      id,
-      times_reviewed: entry.times_reviewed + 1,
-      times_correct_after: newCorrect,
-      mastered,
-      last_reviewed_at: new Date().toISOString(),
-    }, 'UPDATE');
+    // Salvar DIRETO no Supabase (sem intermediário)
+    const { error } = await supabase
+      .from('error_notebook')
+      .update({
+        times_reviewed: entry.times_reviewed + 1,
+        times_correct_after: newCorrect,
+        mastered,
+        last_reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', id);
     
+    if (error) console.error('Erro ao atualizar revisão:', error);
     await loadErrors();
   }
 
@@ -90,108 +93,125 @@ export function CadernoDeErros({ session }: { session: any }) {
     let errorType = 'strategy';
     const explanation = novoErro.error_reason.toLowerCase();
     
-    if (explanation.includes('atenção') || explanation.includes('li errado')) {
+    if (explanation.includes('atenção') || explanation.includes('li errado') || explanation.includes('bobeira')) {
       errorType = 'reading';
-    } else if (explanation.includes('confundi') || novoErro.wrong_answer.toLowerCase().includes('meiose')) {
+    } else if (explanation.includes('confundi')) {
       errorType = 'confusion';
-    } else if (explanation.includes('fórmula') || explanation.includes('conta') || explanation.includes('cálculo')) {
+    } else if (explanation.includes('cálculo') || explanation.includes('conta') || explanation.includes('fórmula')) {
       errorType = 'calculation';
-    } else if (explanation.includes('não sabia') || explanation.includes('nunca vi')) {
+    } else if (explanation.includes('base') || explanation.includes('conhecimento') || explanation.includes('não sabia')) {
       errorType = 'knowledge';
-    } else if (explanation.includes('tempo') || explanation.includes('nervoso') || explanation.includes('pressão')) {
+    } else if (explanation.includes('tempo') || explanation.includes('pressão')) {
       errorType = 'pressure';
+    } else if (explanation.includes('interpretação') || explanation.includes('texto')) {
+      errorType = 'interpretation';
     }
 
-    // Inserção via OfflineService
-    const userId = session?.user?.id || '00000000-0000-0000-0000-000000000000';
-    await offlineService.enqueueTask('error_notebook', { ...novoErro, user_id: userId }, 'INSERT');
+    // Pegar o ID do usuário autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || session?.user?.id;
     
-    // Inserção no sistema de análise inteligente
-    
-    await supabase.from('error_analysis').insert({
-      user_id: userId,
-      question_id: 'CADERNO_MANUAL',
-      subject: novoErro.discipline,
-      topic: novoErro.topic,
-      your_answer: novoErro.wrong_answer,
-      correct_answer: novoErro.correct_answer,
-      error_type: errorType,
-      confidence: 50,
-      time_spent: 60,
-      explanation: novoErro.error_reason,
-      context: 'manual_entry'
-    });
-
-    let topicId;
-
-    // 1. Verificar se o tópico já existe no mapa
-    const { data: existingTopic } = await supabase
-      .from('topics')
-      .select('id, errors_count')
-      .eq('user_id', userId)
-      .eq('name', novoErro.topic)
-      .maybeSingle();
-
-    if (existingTopic) {
-      topicId = existingTopic.id;
-      await supabase
-        .from('topics')
-        .update({
-          errors_count: (existingTopic.errors_count || 0) + 1,
-          status: 'learning',
-          last_studied: new Date()
-        })
-        .eq('id', topicId);
-    } else {
-      const { data: newTopic } = await supabase
-        .from('topics')
-        .insert({
-          user_id: userId,
-          name: novoErro.topic,
-          subject: novoErro.discipline,
-          status: 'learning',
-          accuracy: 0,
-          enem_frequency: 3,
-          last_studied: new Date()
-        })
-        .select()
-        .single();
-      
-      if (newTopic) topicId = newTopic.id;
+    if (!userId) {
+      alert('Erro: Você precisa estar logado para registrar erros. Faça login novamente.');
+      return;
     }
 
-    if (topicId) {
-      await supabase.from('topic_errors').insert({
+    console.log('📝 Salvando erro para usuário:', userId);
+
+    // ========================================
+    // PASSO 1: Salvar DIRETO no error_notebook
+    // ========================================
+    const { data: savedError, error: insertError } = await supabase
+      .from('error_notebook')
+      .insert({
         user_id: userId,
-        topic_id: topicId,
-        error_type: errorType,
-        description: novoErro.error_reason,
-        error_date: new Date()
-      });
+        question_text: novoErro.question_text,
+        discipline: novoErro.discipline,
+        topic: novoErro.topic,
+        wrong_answer: novoErro.wrong_answer,
+        correct_answer: novoErro.correct_answer,
+        error_reason: novoErro.error_reason,
+        simple_explanation: novoErro.simple_explanation,
+        recommended_action: novoErro.recommended_action,
+        times_reviewed: 0,
+        times_correct_after: 0,
+        mastered: false,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('❌ ERRO ao salvar no error_notebook:', insertError);
+      alert('Erro ao salvar: ' + insertError.message);
+      return;
     }
 
-    // Atualização visual imediata na tela
-    const novoErroUI = {
-      id: Date.now().toString(),
-      ...novoErro,
-      times_reviewed: 0,
-      times_correct_after: 0,
-      mastered: false,
-      created_at: new Date().toISOString(),
-      last_reviewed_at: new Date().toISOString()
-    };
-    
-    setErrors(prev => [novoErroUI as any, ...prev]);
+    console.log('✅ Erro salvo com sucesso:', savedError);
 
+    // ========================================
+    // PASSO 2: Criar/atualizar tópico no Mapa Neural
+    // ========================================
+    if (novoErro.topic) {
+      try {
+        const { data: existingTopic } = await supabase
+          .from('topics')
+          .select('id, errors_count')
+          .eq('user_id', userId)
+          .eq('name', novoErro.topic)
+          .maybeSingle();
+
+        let topicId;
+
+        if (existingTopic) {
+          topicId = existingTopic.id;
+          await supabase
+            .from('topics')
+            .update({
+              errors_count: (existingTopic.errors_count || 0) + 1,
+              status: 'learning',
+              last_studied: new Date()
+            })
+            .eq('id', topicId);
+        } else {
+          const { data: newTopic } = await supabase
+            .from('topics')
+            .insert({
+              user_id: userId,
+              name: novoErro.topic,
+              subject: novoErro.discipline,
+              status: 'learning',
+              accuracy: 0,
+              enem_frequency: 3,
+              last_studied: new Date()
+            })
+            .select()
+            .single();
+          
+          if (newTopic) topicId = newTopic.id;
+        }
+
+        // Registrar o erro na rede neural
+        if (topicId) {
+          await supabase.from('topic_errors').insert({
+            user_id: userId,
+            topic_id: topicId,
+            error_type: errorType,
+            description: novoErro.error_reason,
+            error_date: new Date()
+          });
+          console.log('✅ Tópico sincronizado no Mapa Neural:', novoErro.topic);
+        }
+      } catch (topicErr) {
+        console.error('⚠️ Erro ao sincronizar tópico (não crítico):', topicErr);
+      }
+    }
+
+    // ========================================
+    // PASSO 3: Fechar formulário e recarregar
+    // ========================================
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });
-    
-    // Forçar a sincronização em segundo plano para enviar ao banco
-    try {
-      await offlineService.forceSyncNow();
-    } catch(e) {
-      console.log('Sincronização adiada', e);
-    }
+    await loadErrors();
   }
 
   async function deleteError(id: string) {
