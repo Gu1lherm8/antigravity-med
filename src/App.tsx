@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   Upload,
   ChevronRight,
-  BrainCircuit
+  BrainCircuit,
+  Map
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
@@ -39,6 +40,7 @@ import { Triturador } from './components/Triturador';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { RevisaoInteligente } from './components/RevisaoInteligente';
 import { ErrorAnalysisDashboard } from './components/Analysis/ErrorAnalysisDashboard';
+import { MapaDeConhecimento } from './components/Knowledge/MapaDeConhecimento';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
 import { eventBus, APP_EVENTS } from './services/eventBus';
@@ -60,6 +62,7 @@ const NAV_ITEMS = [
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
   { id: 'error-analysis', label: 'Análise de Erros', icon: Target },
+  { id: 'knowledge-map', label: 'Mapa Neural',       icon: Map },
 ];
 
 export default function App() {
@@ -280,6 +283,7 @@ export default function App() {
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
             {activeTab === 'error-analysis' && <ErrorAnalysisDashboard />}
+            {activeTab === 'knowledge-map' && <MapaDeConhecimento />}
 
 
           </div>
