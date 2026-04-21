@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { TopicDetailPanel } from './TopicDetailPanel';
-import { Map, Filter, CheckCircle, Brain, AlertCircle, Loader2 } from 'lucide-react';
+import { Map, Filter, CheckCircle, Brain, AlertCircle, Loader2, Wrench } from 'lucide-react';
+import { repairKnowledgeMap } from '../../services/repairMap';
 
 interface TopicNode {
   id: string;
@@ -154,8 +155,18 @@ export function MapaDeConhecimento({ session }: { session: any }) {
             <div className="text-center">
               <p className="text-xl font-black text-white uppercase tracking-tight">Mapa Vazio</p>
               <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto mt-2 leading-relaxed">
-                Para começar sua rede neural, adicione matérias e registre seus erros no Caderno de Bula. O sistema conectará as ideias automaticamente.
+                Para começar sua rede neural, adicione matérias e registre seus erros no Caderno de Bula. 
               </p>
+              <button 
+                onClick={async () => {
+                  setLoading(true);
+                  await repairKnowledgeMap();
+                  await loadMapData();
+                }}
+                className="mt-6 px-6 py-3 bg-cyan-500/10 border border-cyan-500/50 rounded-2xl text-cyan-400 text-xs font-black uppercase tracking-widest hover:bg-cyan-500/20 transition-all flex items-center gap-2 mx-auto"
+              >
+                <Wrench className="w-4 h-4" /> Sincronizar Tudo Agora
+              </button>
             </div>
           </div>
         )}
