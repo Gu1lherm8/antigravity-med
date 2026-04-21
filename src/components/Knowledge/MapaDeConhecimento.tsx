@@ -35,41 +35,51 @@ export function MapaDeConhecimento() {
 
   const loadMapData = async () => {
     setLoading(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) return;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    // Buscar tópicos
-    const { data: topicsData, error: topicsError } = await supabase
-      .from('topics')
-      .select('*')
-      .eq('user_id', user.id);
+      // Buscar tópicos
+      const { data: topicsData } = await supabase
+        .from('topics')
+        .select('*')
+        .eq('user_id', user.id);
 
-    // Buscar conexões
-    const { data: connectionsData } = await supabase
-      .from('topic_connections')
-      .select('*')
-      .eq('user_id', user.id);
+      // Buscar conexões
+      const { data: connectionsData } = await supabase
+        .from('topic_connections')
+        .select('*')
+        .eq('user_id', user.id);
 
-    // Buscar erros por tópico (contagem)
-    const { data: errorsData } = await supabase
-      .from('topic_errors')
-      .select('topic_id');
+      // Buscar erros por tópico (contagem)
+      const { data: errorsData } = await supabase
+        .from('topic_errors')
+        .select('topic_id')
+        .eq('user_id', user.id);
 
-    // Processar contagem de erros
-    const errorCounts: Record<string, number> = {};
-    errorsData?.forEach(err => {
-      errorCounts[err.topic_id] = (errorCounts[err.topic_id] || 0) + 1;
-    });
+      // Processar contagem de erros
+      const errorCounts: Record<string, number> = {};
+      errorsData?.forEach(err => {
+        errorCounts[err.topic_id] = (errorCounts[err.topic_id] || 0) + 1;
+      });
 
-    const processedNodes = topicsData?.map(topic => ({
-      ...topic,
-      errors_count: errorCounts[topic.id] || 0
-    })) || [];
+      const processedNodes = topicsData?.map(topic => ({
+        ...topic,
+        errors_count: errorCounts[topic.id] || 0
+      })) || [];
 
-    setNodes(processedNodes);
-    setEdges(connectionsData || []);
-    setLoading(false);
+      setNodes(processedNodes);
+      setEdges(connectionsData || []);
+    } catch (error) {
+      console.error('Erro ao carregar mapa:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredNodes = filter === 'all' 
