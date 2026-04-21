@@ -2,8 +2,7 @@ import { supabase } from '../lib/supabase';
 
 /**
  * Script de Diagnóstico e Reparo do Mapa Neural
- * Este script força a sincronização entre o Caderno de Erros e o Mapa Neural
- * ignorando falhas de autenticação e garantindo que o 'manual_user' tenha dados.
+ * Este script força a sincronização entre o Caderno de Erros e o Mapa Neural.
  */
 export async function repairKnowledgeMap() {
   console.log('🚀 Iniciando Reparo do Mapa Neural...');
@@ -11,38 +10,40 @@ export async function repairKnowledgeMap() {
   const userId = 'manual_user';
 
   try {
-    // 1. Buscar todos os erros do Caderno de Bula
+    // 1. Buscar todos os erros de forma global (resgate)
     const { data: errors, error: errLoad } = await supabase
       .from('error_notebook')
       .select('*');
 
     if (errLoad) throw errLoad;
+    
     if (!errors || errors.length === 0) {
-      console.log('ℹ️ Nenhum erro encontrado no caderno para sincronizar.');
+      console.log('ℹ️ Nenhum erro encontrado no sistema.');
       return;
     }
 
-    console.log(`📊 Encontrados ${errors.length} erros. Sincronizando tópicos...`);
+    console.log(`📊 Encontrados ${errors.length} erros. Sincronizando...`);
 
     for (const error of errors) {
-      if (!error.topic) continue;
+      const topicName = error.topic || 'Tópico Geral';
+      const subjectName = error.discipline || 'Geral';
 
-      // 2. Tentar inserir/atualizar o tópico
-      const { data: topic } = await supabase
+      // 2. Garantir que o tópico exista
+      let { data: topic } = await supabase
         .from('topics')
         .select('id')
         .eq('user_id', userId)
-        .eq('name', error.topic)
+        .eq('name', topicName)
         .maybeSingle();
 
       let topicId;
       if (!topic) {
-        const { data: newTopic, error: errIns } = await supabase
+        const { data: newTopic } = await supabase
           .from('topics')
           .insert({
             user_id: userId,
-            name: error.topic,
-            subject: error.discipline || 'Geral',
+            name: topicName,
+            subject: subjectName,
             status: 'learning',
             accuracy: 0,
             enem_frequency: 3,
@@ -52,27 +53,26 @@ export async function repairKnowledgeMap() {
           .single();
         
         if (newTopic) topicId = newTopic.id;
-        if (errIns) console.error('Erro ao criar tópico:', errIns);
       } else {
         topicId = topic.id;
       }
 
-      // 3. Garantir que o erro esteja na tabela de erros do mapa
+      // 3. Vincular o erro ao tópico na rede neural
       if (topicId) {
         await supabase.from('topic_errors').upsert({
           user_id: userId,
           topic_id: topicId,
           error_type: 'knowledge',
-          description: error.error_reason || 'Sincronizado automaticamente',
+          description: error.error_reason || 'Sincronizado',
           error_date: error.created_at || new Date()
-        }, { onConflict: 'topic_id, description' });
+        });
       }
     }
 
-    console.log('✅ Sincronização concluída com sucesso!');
+    console.log('✅ Reparo concluído!');
     return true;
   } catch (e) {
-    console.error('❌ Falha crítica no reparo:', e);
+    console.error('❌ Erro no reparo:', e);
     return false;
   }
 }

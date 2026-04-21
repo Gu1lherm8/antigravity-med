@@ -103,10 +103,10 @@ export function CadernoDeErros({ session }: { session: any }) {
     }
 
     // Inserção via OfflineService
-    await offlineService.enqueueTask('error_notebook', novoErro, 'INSERT');
+    const userId = session?.user?.id || 'manual_user';
+    await offlineService.enqueueTask('error_notebook', { ...novoErro, user_id: userId }, 'INSERT');
     
     // Inserção no sistema de análise inteligente
-    const userId = session?.user?.id || 'manual_user';
     
     await supabase.from('error_analysis').insert({
       user_id: userId,
@@ -122,6 +122,8 @@ export function CadernoDeErros({ session }: { session: any }) {
       context: 'manual_entry'
     });
 
+    let topicId;
+
     // 1. Verificar se o tópico já existe no mapa
     const { data: existingTopic } = await supabase
       .from('topics')
@@ -129,8 +131,6 @@ export function CadernoDeErros({ session }: { session: any }) {
       .eq('user_id', userId)
       .eq('name', novoErro.topic)
       .maybeSingle();
-
-    let topicId;
 
     if (existingTopic) {
       topicId = existingTopic.id;
