@@ -277,7 +277,7 @@ export default function App() {
             {(activeTab === 'missao' || activeTab === 'plano' || activeTab === 'recalculario') && <MissaoDoDia onStartFlow={handleStartPilot as any} />}
             {activeTab === 'calendario'   && <CalendarioSemanal />}
             {activeTab === 'materias'     && <Materias />}
-            {activeTab === 'caderno'      && <CadernoDeErros />}
+            {activeTab === 'caderno'      && <CadernoDeErros session={session} />}
             {(activeTab === 'revisao' || activeTab === 'curva') && <RevisaoInteligente />}
             {activeTab === 'uti'          && <UTI />}
             {activeTab === 'triagem'      && <TriDashboard />}

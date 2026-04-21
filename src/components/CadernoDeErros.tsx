@@ -34,7 +34,7 @@ const DISCIPLINE_COLORS: Record<string, string> = {
   'Geral': '#6b7280',
 };
 
-export function CadernoDeErros() {
+export function CadernoDeErros({ session }: { session: any }) {
   const [errors, setErrors] = useState<ErrorEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandido, setExpandido] = useState<string | null>(null);
@@ -104,24 +104,71 @@ export function CadernoDeErros() {
     // Inserção via OfflineService
     await offlineService.enqueueTask('error_notebook', novoErro, 'INSERT');
     
-    // Inserção no sistema de análise inteligente (novo recurso)
-    const { data: userData } = await supabase.auth.getUser();
-    if (userData?.user) {
-      await supabase.from('error_analysis').insert({
-        user_id: userData.user.id,
-        question_id: 'CADERNO_MANUAL',
-        subject: novoErro.discipline,
-        topic: novoErro.topic,
-        your_answer: novoErro.wrong_answer,
-        correct_answer: novoErro.correct_answer,
+    // Inserção no sistema de análise inteligente
+    const userId = session?.user?.id || 'manual_user';
+    
+    await supabase.from('error_analysis').insert({
+      user_id: userId,
+      question_id: 'CADERNO_MANUAL',
+      subject: novoErro.discipline,
+      topic: novoErro.topic,
+      your_answer: novoErro.wrong_answer,
+      correct_answer: novoErro.correct_answer,
+      error_type: errorType,
+      confidence: 50,
+      time_spent: 60,
+      explanation: novoErro.error_reason,
+      context: 'manual_entry'
+    });
+
+    // 1. Verificar se o tópico já existe no mapa
+    const { data: existingTopic } = await supabase
+      .from('topics')
+      .select('id, errors_count')
+      .eq('user_id', userId)
+      .eq('name', novoErro.topic)
+      .maybeSingle();
+
+    let topicId;
+
+    if (existingTopic) {
+      topicId = existingTopic.id;
+      await supabase
+        .from('topics')
+        .update({
+          errors_count: (existingTopic.errors_count || 0) + 1,
+          status: 'learning',
+          last_studied: new Date()
+        })
+        .eq('id', topicId);
+    } else {
+      const { data: newTopic } = await supabase
+        .from('topics')
+        .insert({
+          user_id: userId,
+          name: novoErro.topic,
+          subject: novoErro.discipline,
+          status: 'learning',
+          accuracy: 0,
+          enem_frequency: 3,
+          last_studied: new Date()
+        })
+        .select()
+        .single();
+      
+      if (newTopic) topicId = newTopic.id;
+    }
+
+    if (topicId) {
+      await supabase.from('topic_errors').insert({
+        user_id: userId,
+        topic_id: topicId,
         error_type: errorType,
-        confidence: 50,
-        time_spent: 60,
-        explanation: novoErro.error_reason,
-        context: 'manual_entry'
+        description: novoErro.error_reason,
+        error_date: new Date()
       });
     }
-    
+
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });
     await loadErrors();
@@ -377,8 +424,31 @@ export function CadernoDeErros() {
                 </div>
               </div>
               <div>
-                <label className="label-form">Por que errei?</label>
-                <textarea value={novoErro.error_reason} onChange={e => setNovoErro({ ...novoErro, error_reason: e.target.value })} placeholder="Confundi os conceitos, não estudei este tópico..." rows={2} className="w-full input-form resize-none" />
+                <label className="label-form">Por que errei? (Escolha uma opção)</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {[
+                    { id: 'Falta de Base (Conhecimento)', label: '📚 Falta de Base' },
+                    { id: 'Interpretação de Texto', label: '📖 Interpretação' },
+                    { id: 'Confundi os Conceitos', label: '🔄 Confundi' },
+                    { id: 'Erro de Atenção / Bobeira', label: '⚡ Atenção' },
+                    { id: 'Erro de Cálculo', label: '🔢 Cálculo' },
+                    { id: 'Falta de Tempo / Pressão', label: '⏳ Tempo' }
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setNovoErro({...novoErro, error_reason: opt.id})}
+                      className={clsx(
+                        "py-2 px-3 rounded-xl text-xs font-bold transition-all border text-left",
+                        novoErro.error_reason === opt.id 
+                          ? "bg-cyan-500/20 border-cyan-500 text-cyan-400" 
+                          : "bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="label-form">Explicação Simples</label>
