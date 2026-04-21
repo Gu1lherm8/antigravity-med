@@ -85,8 +85,42 @@ export function CadernoDeErros() {
   async function saveNovoErro() {
     if (!novoErro.question_text.trim()) return;
     
+    // Classificação automática simples
+    let errorType = 'strategy';
+    const explanation = novoErro.error_reason.toLowerCase();
+    
+    if (explanation.includes('atenção') || explanation.includes('li errado')) {
+      errorType = 'reading';
+    } else if (explanation.includes('confundi') || novoErro.wrong_answer.toLowerCase().includes('meiose')) {
+      errorType = 'confusion';
+    } else if (explanation.includes('fórmula') || explanation.includes('conta') || explanation.includes('cálculo')) {
+      errorType = 'calculation';
+    } else if (explanation.includes('não sabia') || explanation.includes('nunca vi')) {
+      errorType = 'knowledge';
+    } else if (explanation.includes('tempo') || explanation.includes('nervoso') || explanation.includes('pressão')) {
+      errorType = 'pressure';
+    }
+
     // Inserção via OfflineService
     await offlineService.enqueueTask('error_notebook', novoErro, 'INSERT');
+    
+    // Inserção no sistema de análise inteligente (novo recurso)
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user) {
+      await supabase.from('error_analysis').insert({
+        user_id: userData.user.id,
+        question_id: 'CADERNO_MANUAL',
+        subject: novoErro.discipline,
+        topic: novoErro.topic,
+        your_answer: novoErro.wrong_answer,
+        correct_answer: novoErro.correct_answer,
+        error_type: errorType,
+        confidence: 50,
+        time_spent: 60,
+        explanation: novoErro.error_reason,
+        context: 'manual_entry'
+      });
+    }
     
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });

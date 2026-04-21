@@ -38,6 +38,7 @@ import { C5Checklist } from './components/C5Checklist';
 import { Triturador } from './components/Triturador';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { RevisaoInteligente } from './components/RevisaoInteligente';
+import { ErrorAnalysisDashboard } from './components/Analysis/ErrorAnalysisDashboard';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
 import { eventBus, APP_EVENTS } from './services/eventBus';
@@ -58,6 +59,7 @@ const NAV_ITEMS = [
   { id: 'cerebro',      label: 'Cérebro Central',  icon: BrainCircuit },
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
+  { id: 'error-analysis', label: 'Análise de Erros', icon: Target },
 ];
 
 export default function App() {
@@ -277,6 +279,7 @@ export default function App() {
             {activeTab === 'cerebro'      && <PrescritorSemanal onNavigateToCalendar={() => setActiveTab('calendario')} />}
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
+            {activeTab === 'error-analysis' && <ErrorAnalysisDashboard />}
 
 
           </div>
