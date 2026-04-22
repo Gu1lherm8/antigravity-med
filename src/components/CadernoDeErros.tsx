@@ -88,38 +88,13 @@ export function CadernoDeErros({ session }: { session: any }) {
 
   async function saveNovoErro() {
     if (!novoErro.question_text.trim()) return;
-    
-    // Classificação automática simples
-    let errorType = 'strategy';
-    const explanation = novoErro.error_reason.toLowerCase();
-    
-    if (explanation.includes('atenção') || explanation.includes('li errado') || explanation.includes('bobeira')) {
-      errorType = 'reading';
-    } else if (explanation.includes('confundi')) {
-      errorType = 'confusion';
-    } else if (explanation.includes('cálculo') || explanation.includes('conta') || explanation.includes('fórmula')) {
-      errorType = 'calculation';
-    } else if (explanation.includes('base') || explanation.includes('conhecimento') || explanation.includes('não sabia')) {
-      errorType = 'knowledge';
-    } else if (explanation.includes('tempo') || explanation.includes('pressão')) {
-      errorType = 'pressure';
-    } else if (explanation.includes('interpretação') || explanation.includes('texto')) {
-      errorType = 'interpretation';
-    }
 
-    // Pegar o ID do usuário autenticado
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id || session?.user?.id;
-    
-    if (!userId) {
-      alert('Erro: Você precisa estar logado para registrar erros. Faça login novamente.');
-      return;
-    }
-
-    console.log('📝 Salvando erro para usuário:', userId);
+    console.log('📝 Salvando erro direto no Supabase...');
 
     // ========================================
     // PASSO 1: Salvar DIRETO no error_notebook
+    // SEM user_id (a tabela não tem essa coluna)
+    // SEM verificação de auth (sessão é simulada)
     // ========================================
     const { data: savedError, error: insertError } = await supabase
       .from('error_notebook')
@@ -145,63 +120,71 @@ export function CadernoDeErros({ session }: { session: any }) {
       return;
     }
 
-    console.log('✅ Erro salvo com sucesso:', savedError);
+    console.log('✅ Erro salvo com sucesso! ID:', savedError?.id);
 
     // ========================================
-    // PASSO 2: Criar/atualizar tópico no Mapa Neural
+    // PASSO 2: (Opcional) Mapa Neural 
+    // Silencia erros para não travar o fluxo principal
     // ========================================
     if (novoErro.topic) {
       try {
-        const { data: existingTopic } = await supabase
-          .from('topics')
-          .select('id, errors_count')
-          .eq('user_id', userId)
-          .eq('name', novoErro.topic)
-          .maybeSingle();
-
-        let topicId;
-
-        if (existingTopic) {
-          topicId = existingTopic.id;
-          await supabase
+        // Tenta pegar userId real, se não tiver, pula o mapa
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id || session?.user?.id;
+        
+        if (userId) {
+          const { data: existingTopic } = await supabase
             .from('topics')
-            .update({
-              errors_count: (existingTopic.errors_count || 0) + 1,
-              status: 'learning',
-              last_studied: new Date()
-            })
-            .eq('id', topicId);
-        } else {
-          const { data: newTopic } = await supabase
-            .from('topics')
-            .insert({
+            .select('id, errors_count')
+            .eq('user_id', userId)
+            .eq('name', novoErro.topic)
+            .maybeSingle();
+
+          let topicId;
+
+          if (existingTopic) {
+            topicId = existingTopic.id;
+            await supabase
+              .from('topics')
+              .update({
+                errors_count: (existingTopic.errors_count || 0) + 1,
+                status: 'learning',
+                last_studied: new Date()
+              })
+              .eq('id', topicId);
+          } else {
+            const { data: newTopic } = await supabase
+              .from('topics')
+              .insert({
+                user_id: userId,
+                name: novoErro.topic,
+                subject: novoErro.discipline,
+                status: 'learning',
+                accuracy: 0,
+                enem_frequency: 3,
+                last_studied: new Date()
+              })
+              .select()
+              .single();
+            
+            if (newTopic) topicId = newTopic.id;
+          }
+
+          if (topicId) {
+            await supabase.from('topic_errors').insert({
               user_id: userId,
-              name: novoErro.topic,
-              subject: novoErro.discipline,
-              status: 'learning',
-              accuracy: 0,
-              enem_frequency: 3,
-              last_studied: new Date()
-            })
-            .select()
-            .single();
-          
-          if (newTopic) topicId = newTopic.id;
-        }
-
-        // Registrar o erro na rede neural
-        if (topicId) {
-          await supabase.from('topic_errors').insert({
-            user_id: userId,
-            topic_id: topicId,
-            error_type: errorType,
-            description: novoErro.error_reason,
-            error_date: new Date()
-          });
-          console.log('✅ Tópico sincronizado no Mapa Neural:', novoErro.topic);
+              topic_id: topicId,
+              error_type: 'strategy',
+              description: novoErro.error_reason,
+              error_date: new Date()
+            });
+            console.log('✅ Tópico sincronizado no Mapa Neural:', novoErro.topic);
+          }
+        } else {
+          console.log('ℹ️ Mapa Neural: sem userId, pulando sincronização de tópico');
         }
       } catch (topicErr) {
-        console.error('⚠️ Erro ao sincronizar tópico (não crítico):', topicErr);
+        console.warn('⚠️ Mapa Neural: erro não-crítico, ignorado:', topicErr);
       }
     }
 
