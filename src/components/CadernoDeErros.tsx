@@ -122,75 +122,7 @@ export function CadernoDeErros({ session }: { session: any }) {
 
     console.log('✅ Erro salvo com sucesso! ID:', savedError?.id);
 
-    // ========================================
-    // PASSO 2: (Opcional) Mapa Neural 
-    // Silencia erros para não travar o fluxo principal
-    // ========================================
-    if (novoErro.topic) {
-      try {
-        // Tenta pegar userId real, se não tiver, pula o mapa
-        const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id || session?.user?.id;
-        
-        if (userId) {
-          const { data: existingTopic } = await supabase
-            .from('topics')
-            .select('id, errors_count')
-            .eq('user_id', userId)
-            .eq('name', novoErro.topic)
-            .maybeSingle();
-
-          let topicId;
-
-          if (existingTopic) {
-            topicId = existingTopic.id;
-            await supabase
-              .from('topics')
-              .update({
-                errors_count: (existingTopic.errors_count || 0) + 1,
-                status: 'learning',
-                last_studied: new Date()
-              })
-              .eq('id', topicId);
-          } else {
-            const { data: newTopic } = await supabase
-              .from('topics')
-              .insert({
-                user_id: userId,
-                name: novoErro.topic,
-                subject: novoErro.discipline,
-                status: 'learning',
-                accuracy: 0,
-                enem_frequency: 3,
-                last_studied: new Date()
-              })
-              .select()
-              .single();
-            
-            if (newTopic) topicId = newTopic.id;
-          }
-
-          if (topicId) {
-            await supabase.from('topic_errors').insert({
-              user_id: userId,
-              topic_id: topicId,
-              error_type: 'strategy',
-              description: novoErro.error_reason,
-              error_date: new Date()
-            });
-            console.log('✅ Tópico sincronizado no Mapa Neural:', novoErro.topic);
-          }
-        } else {
-          console.log('ℹ️ Mapa Neural: sem userId, pulando sincronização de tópico');
-        }
-      } catch (topicErr) {
-        console.warn('⚠️ Mapa Neural: erro não-crítico, ignorado:', topicErr);
-      }
-    }
-
-    // ========================================
-    // PASSO 3: Fechar formulário e recarregar
-    // ========================================
+    // Fechar formulário e recarregar lista
     setFormAberto(false);
     setNovoErro({ question_text: '', discipline: 'Geral', topic: '', wrong_answer: '', correct_answer: '', error_reason: '', simple_explanation: '', recommended_action: '' });
     await loadErrors();
