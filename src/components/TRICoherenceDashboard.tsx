@@ -218,7 +218,7 @@ export function TRICoherenceDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <h3 className="text-lg font-black text-white uppercase tracking-tight">Desempenho por Dificuldade</h3>
-              <p className="text-xs text-text-secondary font-bold">O gráfico ideal deve ser decrescente (Fácil > Médio > Difícil)</p>
+              <p className="text-xs text-text-secondary font-bold">O gráfico ideal deve ser decrescente (Fácil &gt; Médio &gt; Difícil)</p>
             </div>
             <TrendingUp className="w-5 h-5 text-indigo-400" />
           </div>
