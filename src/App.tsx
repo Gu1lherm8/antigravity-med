@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   Upload,
   ChevronRight,
-  BrainCircuit
+  BrainCircuit,
+  Scale
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
@@ -40,7 +41,9 @@ import { Triturador } from './components/Triturador';
 import { PrescritorSemanal } from './components/PrescritorSemanal';
 import { RevisaoInteligente } from './components/RevisaoInteligente';
 import { ErrorAnalysisDashboard } from './components/Analysis/ErrorAnalysisDashboard';
+import { TRICoherenceDashboard } from './components/TRICoherenceDashboard';
 import AntigravityMedV2 from './components/AntigravityMedV2';
+import { ChecklistEnem2025 } from './components/ChecklistEnem2025';
 import { FlowEngine as FlowLogic, type FlowTask } from './lib/intelligence/FlowEngine';
 
 import { eventBus, APP_EVENTS } from './services/eventBus';
@@ -62,6 +65,8 @@ const NAV_ITEMS = [
   { id: 'biblioteca',   label: 'Biblioteca',       icon: Library },
   { id: 'triturador',   label: 'Triturador IA',    icon: Upload },
   { id: 'matrix-enem',  label: 'Matriz ENEM',      icon: Target },
+  { id: 'checklist',    label: 'Checklist ENEM',   icon: ClipboardList },
+  { id: 'coerencia',    label: 'Mapa de Chutes',   icon: Scale },
   { id: 'error-analysis', label: 'Análise de Erros', icon: Target },
 
 ];
@@ -285,6 +290,8 @@ export default function App() {
             {activeTab === 'biblioteca'   && <BibliotecaUniversal />}
             {activeTab === 'triturador'   && <Triturador />}
             {activeTab === 'matrix-enem'  && <AntigravityMedV2 />}
+            {activeTab === 'checklist'    && <ChecklistEnem2025 />}
+            {activeTab === 'coerencia'    && <TRICoherenceDashboard />}
             {activeTab === 'error-analysis' && <ErrorAnalysisDashboard />}
 
 
