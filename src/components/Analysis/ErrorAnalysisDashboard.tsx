@@ -22,22 +22,25 @@ export function ErrorAnalysisDashboard() {
   const [stats, setStats] = useState<ErrorStats[]>([]);
   const [totalErrors, setTotalErrors] = useState(0);
   const [potentialGain, setPotentialGain] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAnalysis();
   }, []);
 
   const loadAnalysis = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) return;
+    setLoading(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      const userId = user?.id;
 
-    const { data: errors } = await supabase
-      .from('error_analysis')
-      .select('error_type')
-      .eq('user_id', user.id);
+      const { data: errors, error } = await supabase
+        .from('error_analysis')
+        .select('error_type')
+        .eq('user_id', userId || '');
 
-    if (!errors) return;
+      if (error) throw error;
 
     // Contar por tipo
     const counts: { [key: string]: number } = {};
@@ -45,7 +48,7 @@ export function ErrorAnalysisDashboard() {
       counts[err.error_type] = (counts[err.error_type] || 0) + 1;
     });
 
-    const total = errors.length;
+      const total = errors?.length || 0;
 
     const statsData: ErrorStats[] = [
       {
@@ -105,8 +108,22 @@ export function ErrorAnalysisDashboard() {
       (sum, s) => sum + (s.count > 0 ? s.potentialGain : 0),
       0
     );
-    setPotentialGain(totalGain);
+      setPotentialGain(totalGain);
+    } catch (err) {
+      console.error('Erro na análise de erros:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <div className="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin" />
+        <p className="text-text-secondary font-black animate-pulse uppercase tracking-widest text-xs">Sincronizando Banco de Erros...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -133,7 +150,9 @@ export function ErrorAnalysisDashboard() {
         </div>
         <div className="glass-card p-6 border-red-500/10 bg-red-500/5">
           <p className="text-sm font-bold text-red-400 uppercase tracking-widest">Prioridade Atual</p>
-          <p className="text-4xl font-black text-red-400 mt-2">Confusão</p>
+          <p className="text-4xl font-black text-red-400 mt-2">
+            {stats.find(s => s.count > 0)?.errorType || 'Nenhuma'}
+          </p>
         </div>
       </div>
 
@@ -142,22 +161,30 @@ export function ErrorAnalysisDashboard() {
         <h3 className="font-bold text-lg text-white mb-6 uppercase tracking-widest">
           Distribuição por Tipo
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={stats}>
-            <XAxis dataKey="errorType" stroke="#94a3b8" />
-            <YAxis stroke="#94a3b8" />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px' }}
-              itemStyle={{ color: '#fff' }}
-            />
-            <Bar
-              dataKey="count"
-              fill="#14b8a6"
-              name="Quantidade"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="h-[300px] w-full">
+          {totalErrors > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats}>
+                <XAxis dataKey="errorType" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill="#14b8a6"
+                  name="Quantidade"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl">
+              <p className="text-text-secondary font-bold text-sm italic">Nenhum dado para exibir no gráfico</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabela de Recomendações */}
